@@ -26,20 +26,23 @@ constants.py       # EPS (numerical epsilon)
 regionize.py        # 90-region PFL1 geometry, candidate selection, sample labeling
 converters.py         # convert_collide2v_regionized() -- the actual conversion
 convert_data.py         # CLI entrypoint
+estimate_output_size.py  # predicts total output size/event count from a small
+                          # real-data sample, before running the full conversion
 configs/
   example_convert.yaml    # template data_processing: config -- copy and edit per project
+  example_challenge_dataconfig.yaml  # worked example of the config-driven per-challenge system
 docs/
   central_dataset_preprocessing.md   # design doc: region geometry, candidate
                                       # selection, dataset_version filtering,
                                       # the empty-axis event filter
+  challenge_dataconfig.md             # reference for the config-driven per-challenge system
   eos_dataset_schema.md               # raw EOS parquet schema reference
 nrp/
   preprocess_template.yaml   # template Kubernetes Job manifest (NRP/Nautilus) --
                               # every namespace/PVC/secret-specific line marked EDIT
 tests/
-  test_converters.py   # real synthetic-data tests of the candidate-selection
-                        # logic (13 tests, adapted from aidascoutrepo's own
-                        # test suite, passing against this extraction)
+  test_converters.py           # synthetic-data tests of the conversion pipeline
+  test_estimate_output_size.py  # synthetic-data tests of the size estimator
 ```
 
 ## Setup
@@ -84,6 +87,22 @@ split per project (e.g. one `dataconfig.yml` per hackathon challenge)?** See
 `docs/challenge_dataconfig.md` and `configs/example_challenge_dataconfig.yaml`
 for the config-driven system built on top of this same code -- every new key
 is optional and falls back to the behavior described above when omitted.
+
+**Before launching a large production run**, predict its total output size
+and event count against a small real-data sample instead of guessing (or
+finding out after a multi-hour job that a `target_events` was unreachable):
+
+```bash
+python estimate_output_size.py --config ../C1_HH4b/dataconfig.yml
+```
+
+Needs the same EOS/xrootd access a real conversion does; runs the exact same
+collections/candidate_selection/event_selection pipeline against a handful
+of real files per sample (default 5) to measure real bytes/event, then
+extrapolates to each sample's configured `target_events`/`max_files`/full
+scope -- also flags a `target_events` the sample's real file inventory can't
+actually support. See the script's own module docstring for the full method
+and `--sample-files`/`--version-scan-limit` tuning.
 
 On a Kubernetes cluster: `nrp/preprocess_template.yaml` is a starting point
 -- every namespace/PVC/secret-specific line is marked `EDIT`.

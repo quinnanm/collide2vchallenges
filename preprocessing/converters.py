@@ -1016,6 +1016,186 @@ def _append_and_maybe_flush(buffers: dict, buffer_counts: dict, fragment_idx: di
         _flush_buffer(buffers, buffer_counts, fragment_idx, split_dirs, sample, key)
 
 
+# --------------------------------------------------------------------------
+# Config-resolution and per-file-processing helpers shared between
+# convert_collide2v_regionized (below) and estimate_output_size.py -- pulled
+# out so the size estimator runs the EXACT same collection/candidate/
+# event_selection logic a real conversion would, instead of a
+# separately-maintained (and possibly drifting) reimplementation.
+# --------------------------------------------------------------------------
+
+def _resolve_candidate_selection_cfg(cfg: DataConfig) -> dict:
+    """Parse+validate `candidate_selection:`/`report_diagnostics:`. Returns
+    {pt, mode, floor_gev, realistic_pid, report_diagnostics}."""
+    candidate_selection_cfg = cfg.dp("candidate_selection", {}) or {}
+    pt = candidate_selection_cfg.get("pt", cfg.dp("candidate_selection_pt", "weighted"))
+    mode = candidate_selection_cfg.get("mode", "region")
+    floor_gev = candidate_selection_cfg.get("floor_gev", CANDIDATE_PT_FLOOR_GEV)
+    realistic_pid = candidate_selection_cfg.get("realistic_pid", True)
+    if pt not in ("weighted", "raw", "none"):
+        raise ValueError(f"data_processing.candidate_selection.pt must be 'weighted', 'raw', or 'none', got {pt!r}")
+    if mode not in ("region", "flat_topn"):
+        raise ValueError(f"data_processing.candidate_selection.mode must be 'region' or 'flat_topn', got {mode!r}")
+
+    report_diagnostics = cfg.dp("report_diagnostics", False)
+    if report_diagnostics and pt == "none":
+        raise ValueError("data_processing.report_diagnostics doesn't apply to candidate_selection.pt: "
+                          "none -- there's no region/floor/rank selection to report on in that mode.")
+    if report_diagnostics and mode == "flat_topn":
+        raise ValueError("data_processing.report_diagnostics only supports candidate_selection.mode: region -- "
+                          "the region-based accounting doesn't apply to flat_topn.")
+    return {"pt": pt, "mode": mode, "floor_gev": floor_gev, "realistic_pid": realistic_pid,
+            "report_diagnostics": report_diagnostics}
+
+
+def _resolve_collections_cfg(cfg: DataConfig) -> dict:
+    """Parse+validate `collections:`. Returns {want_candidates, candidate_cap,
+    candidate_object_selection, candidate_drop_fields, candidate_total_cap,
+    other_collections_cfg (name -> (cap, object_selection, drop_fields,
+    total_cap)), candidate_columns, other_columns (raw column-name lists for
+    _read_parquet_tolerant)}."""
+    collections_cfg_raw = cfg.dp("collections", None)
+    if collections_cfg_raw is None:
+        collections_cfg_raw = dict(DEFAULT_COLLECTIONS_CFG)
+    if not collections_cfg_raw:
+        raise ValueError("data_processing.collections is empty -- at least one collection must be requested.")
+    unknown = [name for name in collections_cfg_raw if name not in COLLECTION_REGISTRY]
+    if unknown:
+        raise ValueError(f"data_processing.collections: unknown collection(s) {unknown} -- see "
+                          f"COLLECTION_REGISTRY in converters.py for supported names.")
+    collections_cfg = {}
+    for name, entry in collections_cfg_raw.items():
+        cap, object_selection, drop_fields, total_cap = _normalize_collection_entry(entry)
+        spec = COLLECTION_REGISTRY[name]
+        if total_cap is not None and name != "L1T_PUPPIPart":
+            raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for "
+                              f"L1T_PUPPIPart (a secondary post-selection ceiling on the region-based "
+                              f"candidate list) -- every other collection's own 'cap' is already the "
+                              f"final per-event object limit.")
+        # object_selection always refers to a collection's RAW field names
+        # (spec["fields"]) -- true for L1T_PUPPIPart too (PUPPI_CAND_RAW_FIELDS
+        # is its registry `fields` entry). drop_fields, however, refers to
+        # OUTPUT field names, which for L1T_PUPPIPart differ from its raw
+        # fields (derived/renamed -- see PUPPI_CAND_OUTPUT_FIELDS).
+        _validate_object_selection_cuts(name, spec, object_selection)
+        if name == "L1T_PUPPIPart":
+            _validate_drop_fields(name, {"fields": PUPPI_CAND_OUTPUT_FIELDS}, drop_fields)
+        else:
+            _validate_drop_fields(name, spec, drop_fields)
+        collections_cfg[name] = (cap, object_selection, drop_fields, total_cap)
+
+    want_candidates = "L1T_PUPPIPart" in collections_cfg
+    candidate_cap, candidate_object_selection, candidate_drop_fields, candidate_total_cap = collections_cfg.get(
+        "L1T_PUPPIPart", (CANDIDATES_PER_REGION, [], set(), None))
+    other_collections_cfg = {k: v for k, v in collections_cfg.items() if k != "L1T_PUPPIPart"}
+
+    candidate_columns = [f"L1T_PUPPIPart_{f}" for f in PUPPI_CAND_RAW_FIELDS] if want_candidates else []
+    other_columns = [f"{name}_{f}" for name in other_collections_cfg for f in COLLECTION_REGISTRY[name]["fields"]]
+
+    return {
+        "want_candidates": want_candidates, "candidate_cap": candidate_cap,
+        "candidate_object_selection": candidate_object_selection, "candidate_drop_fields": candidate_drop_fields,
+        "candidate_total_cap": candidate_total_cap, "other_collections_cfg": other_collections_cfg,
+        "candidate_columns": candidate_columns, "other_columns": other_columns,
+    }
+
+
+def _resolve_sample_entry(entry, default_max_files: int) -> dict:
+    """Parse+validate one `samples:` list entry (plain string or dict).
+    Returns {sample, max_files, explicit_files, target_events, label,
+    event_selection}."""
+    if isinstance(entry, dict):
+        sample = entry["name"]
+        max_files = entry.get("max_files", default_max_files)
+        explicit_files = entry.get("files")
+        target_events = entry.get("target_events")
+        explicit_label = entry.get("label")
+        event_selection = entry.get("event_selection") or []
+    else:
+        sample = entry
+        max_files, explicit_files, target_events, explicit_label = default_max_files, None, None, None
+        event_selection = []
+    _validate_event_selection_cuts(event_selection)
+    label = explicit_label if explicit_label is not None else label_for_sample(sample)
+    return {"sample": sample, "max_files": max_files, "explicit_files": explicit_files,
+            "target_events": target_events, "label": label, "event_selection": event_selection}
+
+
+def _discover_sample_files(sample_dir: str, redir: str, sample: str, explicit_files) -> list:
+    """The full candidate file-name list for one sample (before any
+    dataset_version filtering/max_files truncation) -- the pinned `files:`
+    list if given, else a full remote/local directory listing."""
+    if explicit_files is not None:
+        return list(explicit_files)
+    sample_path = f"{sample_dir}/{sample}"
+    if redir:
+        return list_remote_files(join_remote(redir, sample_path))
+    return sorted(os.path.basename(p) for p in glob.glob(os.path.join(sample_dir, sample, "*.parquet")))
+
+
+def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_selection_pt: str,
+                            candidate_mode: str, candidate_cap, floor_gev: float,
+                            candidate_object_selection: list, candidate_drop_fields: set,
+                            realistic_pid: bool, candidate_total_cap, other_collections_cfg: dict,
+                            event_selection: list, label: int, source_file_idx: int) -> tuple:
+    """Shared core of per-file processing: apply event_selection, gather
+    every requested collection, apply the empty-axis filter, and build the
+    final `record` (ak.Array, with label/source_file/source_row attached).
+    Used by BOTH convert_collide2v_regionized's real per-sample loop and
+    estimate_output_size.py's sampling, so the two can never silently drift
+    apart in what actually survives to output.
+
+    Returns (record_or_None, n_events_read, n_selection_dropped, n_axis_dropped)
+    -- record is None if every event in this file was dropped.
+    """
+    n_events_read = len(arr)
+    selection_mask = (_evaluate_event_selection(arr, event_selection, n_events_read)
+                       if event_selection else np.ones(n_events_read, dtype=bool))
+    n_selection_dropped = int((~selection_mask).sum())
+
+    cands = None
+    if want_candidates:
+        cands = gather_and_select_puppi_candidates(arr, selection_pt=candidate_selection_pt,
+                                                    mode=candidate_mode, cap=candidate_cap,
+                                                    floor_gev=floor_gev,
+                                                    object_selection=candidate_object_selection,
+                                                    drop_fields=candidate_drop_fields,
+                                                    realistic_pid=realistic_pid,
+                                                    total_cap=candidate_total_cap)
+    others = {name: gather_collection(arr, name, COLLECTION_REGISTRY[name], cap, n_events_read,
+                                       object_selection=object_selection, drop_fields=drop_fields)
+              for name, (cap, object_selection, drop_fields, _total_cap) in other_collections_cfg.items()}
+
+    # Drop events failing event_selection, and/or missing real content on
+    # either requested axis -- see _drop_events_with_empty_axis's docstring.
+    # source_row (below) must stay the ORIGINAL row index into the source
+    # file (not a post-drop renumbering), so provenance still resolves
+    # correctly.
+    axis_keep_mask, _ = _drop_events_with_empty_axis(cands, others, n_events_read, want_candidates)
+    keep_mask = selection_mask & axis_keep_mask
+    n_axis_dropped = int((selection_mask & ~axis_keep_mask).sum())
+
+    source_rows = np.arange(n_events_read)
+    n_dropped = n_events_read - int(keep_mask.sum())
+    if n_dropped:
+        if cands is not None:
+            cands = cands[keep_mask]
+        others = {name: coll[keep_mask] for name, coll in others.items()}
+        source_rows = source_rows[keep_mask]
+    n_events = len(source_rows)
+    if n_events == 0:
+        return None, n_events_read, n_selection_dropped, n_axis_dropped
+
+    record_fields = dict(others)
+    if cands is not None:
+        record_fields["L1T_PUPPIPart"] = cands
+    record_fields["label"] = ak.values_astype(ak.Array(np.full(n_events, label)), np.int8)
+    record_fields["source_file"] = ak.values_astype(ak.Array(np.full(n_events, source_file_idx)), np.int32)
+    record_fields["source_row"] = ak.values_astype(ak.Array(source_rows), np.int16)
+    record = ak.zip(record_fields, depth_limit=1)
+    return record, n_events_read, n_selection_dropped, n_axis_dropped
+
+
 def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> None:
     """EOS foundational-model-dataset -> per-sample parquet training files.
     See docs/central_dataset_preprocessing.md for the original fixed-recipe
@@ -1136,60 +1316,20 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
     max_events_per_file = cfg.dp("max_events_per_file", -1)
     dataset_version = cfg.dp("dataset_version", "collide2v_v1.0")
 
-    candidate_selection_cfg = cfg.dp("candidate_selection", {}) or {}
-    candidate_selection_pt = candidate_selection_cfg.get("pt", cfg.dp("candidate_selection_pt", "weighted"))
-    candidate_mode = candidate_selection_cfg.get("mode", "region")
-    floor_gev = candidate_selection_cfg.get("floor_gev", CANDIDATE_PT_FLOOR_GEV)
-    realistic_pid = candidate_selection_cfg.get("realistic_pid", True)
-    if candidate_selection_pt not in ("weighted", "raw", "none"):
-        raise ValueError(f"data_processing.candidate_selection.pt must be 'weighted', 'raw', or 'none', "
-                          f"got {candidate_selection_pt!r}")
-    if candidate_mode not in ("region", "flat_topn"):
-        raise ValueError(f"data_processing.candidate_selection.mode must be 'region' or 'flat_topn', "
-                          f"got {candidate_mode!r}")
+    cs_cfg = _resolve_candidate_selection_cfg(cfg)
+    candidate_selection_pt, candidate_mode = cs_cfg["pt"], cs_cfg["mode"]
+    floor_gev, realistic_pid = cs_cfg["floor_gev"], cs_cfg["realistic_pid"]
+    report_diagnostics = cs_cfg["report_diagnostics"]
 
-    report_diagnostics = cfg.dp("report_diagnostics", False)
-    if report_diagnostics and candidate_selection_pt == "none":
-        raise ValueError("data_processing.report_diagnostics doesn't apply to candidate_selection.pt: "
-                          "none -- there's no region/floor/rank selection to report on in that mode.")
-    if report_diagnostics and candidate_mode == "flat_topn":
-        raise ValueError("data_processing.report_diagnostics only supports candidate_selection.mode: region -- "
-                          "the region-based accounting doesn't apply to flat_topn.")
-
-    collections_cfg_raw = cfg.dp("collections", None)
-    if collections_cfg_raw is None:
-        collections_cfg_raw = dict(DEFAULT_COLLECTIONS_CFG)
-    if not collections_cfg_raw:
-        raise ValueError("data_processing.collections is empty -- at least one collection must be requested.")
-    unknown = [name for name in collections_cfg_raw if name not in COLLECTION_REGISTRY]
-    if unknown:
-        raise ValueError(f"data_processing.collections: unknown collection(s) {unknown} -- see "
-                          f"COLLECTION_REGISTRY in converters.py for supported names.")
-    collections_cfg = {}
-    for name, entry in collections_cfg_raw.items():
-        cap, object_selection, drop_fields, total_cap = _normalize_collection_entry(entry)
-        spec = COLLECTION_REGISTRY[name]
-        if total_cap is not None and name != "L1T_PUPPIPart":
-            raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for "
-                              f"L1T_PUPPIPart (a secondary post-selection ceiling on the region-based "
-                              f"candidate list) -- every other collection's own 'cap' is already the "
-                              f"final per-event object limit.")
-        # object_selection always refers to a collection's RAW field names
-        # (spec["fields"]) -- true for L1T_PUPPIPart too (PUPPI_CAND_RAW_FIELDS
-        # is its registry `fields` entry). drop_fields, however, refers to
-        # OUTPUT field names, which for L1T_PUPPIPart differ from its raw
-        # fields (derived/renamed -- see PUPPI_CAND_OUTPUT_FIELDS).
-        _validate_object_selection_cuts(name, spec, object_selection)
-        if name == "L1T_PUPPIPart":
-            _validate_drop_fields(name, {"fields": PUPPI_CAND_OUTPUT_FIELDS}, drop_fields)
-        else:
-            _validate_drop_fields(name, spec, drop_fields)
-        collections_cfg[name] = (cap, object_selection, drop_fields, total_cap)
-
-    want_candidates = "L1T_PUPPIPart" in collections_cfg
-    candidate_cap, candidate_object_selection, candidate_drop_fields, candidate_total_cap = collections_cfg.get(
-        "L1T_PUPPIPart", (CANDIDATES_PER_REGION, [], set(), None))
-    other_collections_cfg = {k: v for k, v in collections_cfg.items() if k != "L1T_PUPPIPart"}
+    coll_cfg = _resolve_collections_cfg(cfg)
+    want_candidates = coll_cfg["want_candidates"]
+    candidate_cap = coll_cfg["candidate_cap"]
+    candidate_object_selection = coll_cfg["candidate_object_selection"]
+    candidate_drop_fields = coll_cfg["candidate_drop_fields"]
+    candidate_total_cap = coll_cfg["candidate_total_cap"]
+    other_collections_cfg = coll_cfg["other_collections_cfg"]
+    candidate_columns = coll_cfg["candidate_columns"]
+    other_columns = coll_cfg["other_columns"]
 
     split_cfg = cfg.dp("split", None)
     train_frac = split_seed = None
@@ -1203,35 +1343,15 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
 
     flush_every_events = cfg.dp("flush_every_events", 2_000_000)
 
-    candidate_columns = [f"L1T_PUPPIPart_{f}" for f in PUPPI_CAND_RAW_FIELDS] if want_candidates else []
-    other_columns = [f"{name}_{f}" for name in other_collections_cfg for f in COLLECTION_REGISTRY[name]["fields"]]
-
     for entry in samples:
-        if isinstance(entry, dict):
-            sample = entry["name"]
-            max_files = entry.get("max_files", default_max_files)
-            explicit_files = entry.get("files")
-            target_events = entry.get("target_events")
-            explicit_label = entry.get("label")
-            event_selection = entry.get("event_selection") or []
-        else:
-            sample = entry
-            max_files, explicit_files, target_events, explicit_label = default_max_files, None, None, None
-            event_selection = []
-        _validate_event_selection_cuts(event_selection)
-        label = explicit_label if explicit_label is not None else label_for_sample(sample)
-        sample_path = f"{sample_dir}/{sample}"
+        se = _resolve_sample_entry(entry, default_max_files)
+        sample, max_files, explicit_files = se["sample"], se["max_files"], se["explicit_files"]
+        target_events, label, event_selection = se["target_events"], se["label"], se["event_selection"]
 
-        def _resolve_src(fname, sample_path=sample_path):
+        def _resolve_src(fname, sample_path=f"{sample_dir}/{sample}"):
             return join_remote(redir, f"{sample_path}/{fname}") if redir else os.path.join(sample_dir, sample, fname)
 
-        if explicit_files is not None:
-            candidate_file_names = explicit_files
-        elif redir:
-            candidate_file_names = list_remote_files(join_remote(redir, sample_path))
-        else:
-            candidate_file_names = sorted(os.path.basename(p) for p in glob.glob(os.path.join(sample_dir, sample, "*.parquet")))
-
+        candidate_file_names = _discover_sample_files(sample_dir, redir, sample, explicit_files)
         required_columns = list(dict.fromkeys(candidate_columns + _event_selection_columns(event_selection)))
 
         if split_cfg:
@@ -1274,26 +1394,16 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
             used_file_names.append(fname)
 
             arr = _read_parquet_tolerant(src, required_columns, other_columns, max_events_per_file)
-            n_events_read = len(arr)
-            if n_events_read == 0:
+            if len(arr) == 0:
                 continue
 
-            selection_mask = (_evaluate_event_selection(arr, event_selection, n_events_read)
-                               if event_selection else np.ones(n_events_read, dtype=bool))
-            n_selection_dropped = int((~selection_mask).sum())
-
-            cands = None
-            if want_candidates:
-                cands = gather_and_select_puppi_candidates(arr, selection_pt=candidate_selection_pt,
-                                                            mode=candidate_mode, cap=candidate_cap,
-                                                            floor_gev=floor_gev,
-                                                            object_selection=candidate_object_selection,
-                                                            drop_fields=candidate_drop_fields,
-                                                            realistic_pid=realistic_pid,
-                                                            total_cap=candidate_total_cap)
-            others = {name: gather_collection(arr, name, COLLECTION_REGISTRY[name], cap, n_events_read,
-                                               object_selection=object_selection, drop_fields=drop_fields)
-                      for name, (cap, object_selection, drop_fields, _total_cap) in other_collections_cfg.items()}
+            record, n_events_read, n_selection_dropped, n_axis_dropped = _build_record_for_file(
+                arr, want_candidates=want_candidates, candidate_selection_pt=candidate_selection_pt,
+                candidate_mode=candidate_mode, candidate_cap=candidate_cap, floor_gev=floor_gev,
+                candidate_object_selection=candidate_object_selection, candidate_drop_fields=candidate_drop_fields,
+                realistic_pid=realistic_pid, candidate_total_cap=candidate_total_cap,
+                other_collections_cfg=other_collections_cfg, event_selection=event_selection,
+                label=label, source_file_idx=source_file_idx)
 
             if report_diagnostics:
                 d = diagnose_puppi_selection(arr, selection_pt=candidate_selection_pt, cap=candidate_cap,
@@ -1302,37 +1412,13 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                     diag_totals[k] += d[k]
                 diag_totals["region_truncated_counts"] += d["region_truncated_counts"]
 
-            # Drop events failing event_selection, and/or missing real
-            # content on either requested axis -- see
-            # _drop_events_with_empty_axis's docstring. source_row (below)
-            # must stay the ORIGINAL row index into the source file (not a
-            # post-drop renumbering), so provenance still resolves correctly.
-            axis_keep_mask, _ = _drop_events_with_empty_axis(cands, others, n_events_read, want_candidates)
-            keep_mask = selection_mask & axis_keep_mask
-            n_axis_dropped = int((selection_mask & ~axis_keep_mask).sum())
             total_selection_dropped += n_selection_dropped
             total_empty_axis_dropped += n_axis_dropped
-
-            source_rows = np.arange(n_events_read)
-            n_dropped = n_events_read - int(keep_mask.sum())
-            if n_dropped:
-                if cands is not None:
-                    cands = cands[keep_mask]
-                others = {name: coll[keep_mask] for name, coll in others.items()}
-                source_rows = source_rows[keep_mask]
-            n_events = len(source_rows)
-            if n_events == 0:
+            if record is None:
                 logger.warning(f"[{sample}] {fname}: all {n_events_read} events dropped (event_selection "
                                 f"and/or empty-axis filter) -- skipping file.")
                 continue
-
-            record_fields = dict(others)
-            if cands is not None:
-                record_fields["L1T_PUPPIPart"] = cands
-            record_fields["label"] = ak.values_astype(ak.Array(np.full(n_events, label)), np.int8)
-            record_fields["source_file"] = ak.values_astype(ak.Array(np.full(n_events, source_file_idx)), np.int32)
-            record_fields["source_row"] = ak.values_astype(ak.Array(source_rows), np.int16)
-            record = ak.zip(record_fields, depth_limit=1)
+            n_events = len(record)
 
             if split_cfg:
                 assign_train = rng.random(n_events) < train_frac
