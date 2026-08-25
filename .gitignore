@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# convert_data.py writes its run logs here (preprocessing/logs/<ds_name>_<timestamp>.log)
+preprocessing/logs/
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+.idea/
