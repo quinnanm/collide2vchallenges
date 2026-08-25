@@ -1,0 +1,54 @@
+# Example/template Stage-1 config -- copy this per project/dataset variant
+# you need. See converters.py's convert_collide2v_regionized() docstring
+# for the full data_processing: key reference, and
+# docs/central_dataset_preprocessing.md for the design behind the defaults
+# below (region geometry, candidate selection, the empty-axis filter).
+#
+# EDIT FOR YOUR OWN PROJECT:
+#   - sample_dir / redir: your EOS path and xrootd redirector.
+#   - out_path: where the output parquet lands (a different volume/PVC than
+#     aidascoutrepo's -- this package doesn't assume any particular mount).
+#   - samples: which EOS subdirectories to convert. Two forms per entry:
+#       - name: <dir>                  # plain string also works if you
+#                                       # don't need max_files/files:
+#         max_files: <N>               # -1 (or omit) = every file found
+#       - name: <dir>
+#         files: [<exact filenames>]   # pins an exact file list instead of
+#                                       # auto-discovering -- use this if you
+#                                       # need reproducible file selection
+#                                       # across multiple conversion runs
+#   - The label each sample gets comes from regionize.label_for_sample() --
+#     edit regionize.py's SAMPLE_LABELS dict for your own project's class
+#     scheme; anything not listed there gets label 5 ("Other").
+ds_name: example_dataset
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/your/output/volume/example_dataset"
+
+  # "weighted" (default, PUPPI-weighted pT -- the design's normal choice) or
+  # "raw" (unweighted pT >= 1GeV floor, an ablation -- see that key's
+  # docstring in converters.py for why "raw" exists and when you'd want it).
+  candidate_selection_pt: weighted
+
+  # REQUIRED parquet file-level metadata filter -- see
+  # docs/central_dataset_preprocessing.md and converters.py's docstring for
+  # why this exists (the EOS dataset mixes early/testing files with no
+  # dataset_version metadata alongside final production files). Confirm the
+  # current production value with whoever maintains the EOS dataset if
+  # you're not sure this is still current.
+  dataset_version: collide2v_v1.0
+
+  # true: also compute and log a per-sample candidate-cut breakdown
+  # (out-of-acceptance / below-floor / rank-truncated / kept). Cheap
+  # relative to the per-file xrootd read, off by default.
+  report_diagnostics: false
+
+  samples:
+    - name: QCD_HT50toInf
+      max_files: 5   # -1 = every file in this directory
+    - name: minbias
+      max_files: 5
+
+  max_events_per_file: -1

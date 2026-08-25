@@ -1,0 +1,103 @@
+# Template Kubernetes Job for running convert_data.py on NRP/Nautilus.
+# Adapted from aidascoutrepo's nrp/preprocess/preprocess_collide_1m_ptrawv1.yaml
+# -- EVERYTHING MARKED "EDIT" below is specific to that repo's namespace/PVC
+# and must be changed for your own project. See docs/central_dataset_preprocessing.md
+# and nrp/README.md in aidascoutrepo (github.com/AIDA-Scout/aidascoutrepo)
+# §4 for the full grid-certificate/x509-proxy-secret setup this job needs --
+# not reproduced here since the exact steps (VOMS role, secret name) are
+# specific to your own CERN/CMS grid credentials, not this codebase.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: preprocess-example  # EDIT: a name unique in your namespace
+  namespace: your-namespace  # EDIT
+spec:
+  backoffLimit: 0
+  # Safety net: xrootd reads against EOS have been observed to hang
+  # silently on some cluster nodes -- force a visible, retryable failure
+  # instead of a job hanging indefinitely. Size this to your own sample
+  # count/file sizes.
+  activeDeadlineSeconds: 5400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: preprocess
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              # Grid certificate setup -- needed for xrootd EOS access.
+              # Adjust these paths if your cluster's CVMFS mount differs.
+              if [ -d /cvmfs/grid.cern.ch/etc/grid-security/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates
+                export X509_VOMS_DIR=/cvmfs/grid.cern.ch/etc/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/grid.cern.ch/etc/grid-security/vomses
+              elif [ -d /cvmfs/oasis.opensciencegrid.org/mis/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/oasis.opensciencegrid.org/mis/certificates
+                export X509_VOMS_DIR=/cvmfs/oasis.opensciencegrid.org/mis/vodata/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/oasis.opensciencegrid.org/mis/vodata/vomses
+              else
+                echo "FATAL: no CVMFS grid repo found" >&2
+                exit 1
+              fi
+              export XRD_NETWORKSTACK=IPv4
+
+              # EDIT: replace this with however you get this directory's
+              # files into the pod -- e.g. a git clone of a repo containing
+              # them, or a ConfigMap. There's no code to install here beyond
+              # requirements.txt -- config.py/constants.py/regionize.py/
+              # converters.py/convert_data.py are plain scripts, not a
+              # package.
+              cd /path/to/collide2vpreproc
+              pip install --quiet -r requirements.txt
+
+              echo "=== Starting conversion: $(date) ==="
+              # -u: unbuffered stdout, so progress is visible live instead
+              # of only appearing at process exit.
+              python -u convert_data.py \
+                --config configs/example_convert.yaml --overwrite
+
+              echo "=== Job finished: $(date) ==="
+
+          env:
+            - name: X509_USER_PROXY
+              value: /etc/grid-security-ro/x509up
+
+          resources:
+            # EDIT: QCD-scale samples under weighted-pT selection run
+            # comfortably in 16-32Gi; raw-pT selection (see
+            # candidate_selection_pt in the config) keeps far more
+            # candidates/event and needs much more -- aidascoutrepo's own
+            # raw-pT QCD conversion needed 96Gi. Size to your own selection
+            # mode and sample sizes; the failure mode if this is too low is
+            # an OOM-kill during the final per-sample concatenate+write,
+            # which holds every already-processed file's result in memory
+            # at once.
+            requests: {memory: "32Gi", cpu: "4"}
+            limits: {memory: "32Gi", cpu: "4"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /your/output/volume  # EDIT: match out_path in the config
+            - name: x509-proxy
+              mountPath: /etc/grid-security-ro
+              readOnly: true
+            - name: cvmfs
+              mountPath: /cvmfs
+              mountPropagation: HostToContainer
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: your-pvc-name  # EDIT
+        - name: x509-proxy
+          secret:
+            secretName: your-x509-proxy-secret  # EDIT -- see nrp/README.md §4 in aidascoutrepo
+            defaultMode: 0400
+        - name: cvmfs
+          persistentVolumeClaim:
+            claimName: cvmfs  # usually a cluster-wide shared PVC, same name everywhere
