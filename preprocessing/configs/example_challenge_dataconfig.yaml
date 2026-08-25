@@ -1,0 +1,77 @@
+# Fully-worked example of the config-driven per-challenge system -- see
+# docs/challenge_dataconfig.md for the full reference on every key below.
+# example_convert.yaml (this directory) stays the minimal/legacy example;
+# copy THIS file instead if you want to see every new knob in one place.
+ds_name: example_challenge_dataset
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/your/output/volume/example_challenge_dataset"
+  dataset_version: collide2v_v1.0
+
+  # Every sample needs an explicit `label:` for a challenge-specific process
+  # list -- regionize.label_for_sample()'s default QCD/MinBias/TT/WJets/DY
+  # scheme won't recognize e.g. HH_4b and would silently label it "Other".
+  # target_events (whole-file granularity, overshoot allowed) replaces
+  # max_files/files: when you want "about N events" instead of "N files".
+  samples:
+    - name: HH_4b
+      label: 1
+      target_events: 200000
+    - name: QCD_HT50toInf
+      label: 0
+      target_events: 1000000
+      # event_selection: keeps/drops whole EVENTS based on a raw-field
+      # condition, independent of `collections:` (the field doesn't need to
+      # be in the output at all) -- e.g. only keep high-HT QCD events.
+      event_selection:
+        - {collection: FullReco_ScalarHT, field: HT, op: '>', value: 240}
+        - {collection: L1T_JetAK4, field: PT, reduce: count, op: '>=', value: 2}
+
+  # Which collections to keep, and per-collection controls. A plain
+  # int/null value is shorthand for "cap only"; the dict form adds
+  # object_selection (keeps/drops individual OBJECTS, not whole events --
+  # e.g. drop individual low-PT jets before the cap/ranking) and drop_fields
+  # (omit specific output fields entirely, e.g. MC-truth flags). Omit this
+  # whole key to fall back to the original default set (every L1T_*
+  # collection except L1T_PFPart).
+  collections:
+    L1T_PUPPIPart:
+      cap: 18   # region mode (default, see candidate_selection below):
+                 # candidates KEPT PER REGION, not a flat per-event count
+      object_selection:
+        - {field: PT, op: '>=', value: 1.0}   # per-candidate raw-pT floor
+      drop_fields: [is_pu, is_reco_pu]          # drop MC-truth pileup flags
+    L1T_JetAK4:
+      cap: 10
+      object_selection:
+        - {field: PT, op: '>', value: 20}
+    L1T_MuonTight: 4
+    L1T_Electron: 4
+    L1T_PhotonTight: 4
+    L1T_MET: 1            # fixed-size collection -- cap/object_selection ignored
+
+  # All optional, shown here at their defaults except `mode` (commented) --
+  # see docs/challenge_dataconfig.md for the "region" vs "flat_topn" tradeoff.
+  candidate_selection:
+    # mode: flat_topn    # uncomment for a simple top-N-by-pT candidate list
+                           # instead of the 90-region PFL1 geometry -- then
+                           # collections.L1T_PUPPIPart.cap above means "total
+                           # candidates for the whole event", not per-region.
+    mode: region
+    pt: weighted
+    floor_gev: 1.0
+    realistic_pid: true    # false = raw (truth-adjacent) PID, an explicit opt-out
+
+  # Train/eval split -- omit this whole key for the original single-file
+  # (well, single-fragment) per-sample output. Output layout becomes
+  # <out_path>/train/<sample>/... and <out_path>/eval/<sample>/... (see
+  # docs/challenge_dataconfig.md's "Output layout" section).
+  split:
+    train_frac: 0.9
+    eval_frac: 0.1
+    seed: 42
+
+  # Fragment-flush threshold -- bounds memory regardless of target_events.
+  flush_every_events: 2000000

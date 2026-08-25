@@ -1,0 +1,17 @@
+# Data volume for the fastml26-hackathon namespace -- holds preprocessed
+# collide2v parquet output from ../../preprocessing/convert_data.py. Mirrors
+# aida-scout's own collide2vsubset PVC (rook-cephfs, ReadWriteMany, so
+# multiple pods/jobs can read the same preprocessed data concurrently),
+# sized at 4Ti (vs. collide2vsubset's 2Ti) for this project's own needs.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: collide2vchallenges
+  namespace: fastml26-hackathon
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: rook-cephfs
+  resources:
+    requests:
+      storage: 4Ti

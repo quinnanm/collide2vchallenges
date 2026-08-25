@@ -1,0 +1,34 @@
+# C5: foundation model challenge dataset config.
+# STUB -- see preprocessing/docs/challenge_dataconfig.md for the full key
+# reference. Nothing challenge-specific is filled in here yet: a foundation-
+# model dataset's process list/event counts/collections are a challenge-
+# design decision (likely a broad, high-statistics process mix, given the
+# "foundation model" framing), not something to guess at in this stub.
+ds_name: C5_foundation_model
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/collide2vchallenges/C5_foundation_model"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
+  dataset_version: collide2v_v1.0
+
+  # TODO: real process list + per-process target_events + explicit labels.
+  # docs/eos_dataset_schema.md lists all 53 available EOS sample directories
+  # (29 backgrounds + 24 signals) if a broad mix is wanted.
+  # NOTE: convert_data.py deliberately errors on an empty `samples:`/
+  # `collections:` -- this stub won't run until both are filled in.
+  samples: []
+
+  # TODO: which collections a foundation-model pretraining dataset needs --
+  # likely the PUPPI candidate collection (L1T_PUPPIPart) at minimum, since
+  # that's what AIDA-Scout's own axis-2 contrastive encoder consumes; left
+  # unset here pending the actual challenge design.
+  collections: {}
+
+  split:
+    train_frac: 0.9
+    eval_frac: 0.1
+    seed: 42
+
+  flush_every_events: 2000000
+  report_diagnostics: false

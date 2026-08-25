@@ -69,6 +69,25 @@ def assign_region(eta: np.ndarray, phi: np.ndarray) -> np.ndarray:
     return np.where(eta_ok, eta_bin * PHI_BINS + phi_bin, -1)
 
 
+def _rank_within_groups(group_key: np.ndarray, pt_rank: np.ndarray) -> np.ndarray:
+    """Shared core of select_top_per_region/select_top_n_per_event: given
+    flat per-candidate arrays of an already-computed integer group id and a
+    value to rank by (descending), return each candidate's 0-based rank
+    within its own group. `group_key`/`pt_rank` must already be restricted to
+    exactly the candidates under consideration (the caller's `keep` mask
+    applied) -- this function itself does no filtering."""
+    order = np.lexsort((-pt_rank, group_key))
+    group_sorted = group_key[order]
+    change = np.empty(len(group_sorted), dtype=bool)
+    change[0] = True
+    change[1:] = group_sorted[1:] != group_sorted[:-1]
+    group_start = np.where(change)[0]
+    rank_sorted = np.arange(len(group_sorted)) - np.repeat(group_start, np.diff(np.append(group_start, len(group_sorted))))
+    rank = np.empty_like(rank_sorted)
+    rank[order] = rank_sorted
+    return rank
+
+
 def select_top_per_region(event_idx: np.ndarray, region_id: np.ndarray, pt_rank: np.ndarray,
                            above_floor: np.ndarray, n_events: int,
                            cap: int = CANDIDATES_PER_REGION) -> np.ndarray:
@@ -86,20 +105,31 @@ def select_top_per_region(event_idx: np.ndarray, region_id: np.ndarray, pt_rank:
         return np.zeros(len(event_idx), dtype=bool)
 
     group_key = ev.astype(np.int64) * N_REGIONS + reg
-    order = np.lexsort((-pt, group_key))
-    group_sorted = group_key[order]
-    change = np.empty(len(group_sorted), dtype=bool)
-    change[0] = True
-    change[1:] = group_sorted[1:] != group_sorted[:-1]
-    group_start = np.where(change)[0]
-    rank = np.arange(len(group_sorted)) - np.repeat(group_start, np.diff(np.append(group_start, len(group_sorted))))
-
-    survives_sorted = rank < cap
-    survives_in_kept_order = np.zeros(len(pt), dtype=bool)
-    survives_in_kept_order[order] = survives_sorted
+    rank = _rank_within_groups(group_key, pt)
 
     out = np.zeros(len(event_idx), dtype=bool)
-    out[np.where(keep)[0]] = survives_in_kept_order
+    out[np.where(keep)[0]] = rank < cap
+    return out
+
+
+def select_top_n_per_event(event_idx: np.ndarray, pt_rank: np.ndarray, above_floor: np.ndarray,
+                            n_events: int, cap: int) -> np.ndarray:
+    """Like select_top_per_region, but grouping on event alone -- no region
+    geometry at all. Used by candidate_selection.mode: flat_topn (a
+    no-region-geometry alternative to L1T_PUPPIPart's default region-based
+    selection) and by generic per-collection object-count caps (any
+    `collections:` entry with a configured max-objects/event, ranked by that
+    collection's rank_field descending). `above_floor` may be all-True (e.g.
+    a plain "keep the top N objects" cap with no floor concept)."""
+    keep = above_floor
+    ev, pt = event_idx[keep], pt_rank[keep]
+    if len(ev) == 0:
+        return np.zeros(len(event_idx), dtype=bool)
+
+    rank = _rank_within_groups(ev.astype(np.int64), pt)
+
+    out = np.zeros(len(event_idx), dtype=bool)
+    out[np.where(keep)[0]] = rank < cap
     return out
 
 

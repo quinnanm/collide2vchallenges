@@ -1,0 +1,82 @@
+# Kubernetes Job: runs preprocessing/convert_data.py against C1_HH4b/dataconfig.yml
+# on NRP/Nautilus, in the fastml26-hackathon namespace. Adapted from
+# preprocessing/nrp/preprocess_template.yaml -- see that file's comments for
+# background on every piece below (grid-cert/CVMFS setup, why
+# activeDeadlineSeconds exists, the OOM-kill failure mode resources: guards
+# against).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: preprocess-c1-hh4b
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 5400   # TODO: adjust once C1_HH4b/dataconfig.yml's target_events are finalized (still placeholders)
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: preprocess
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              if [ -d /cvmfs/grid.cern.ch/etc/grid-security/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates
+                export X509_VOMS_DIR=/cvmfs/grid.cern.ch/etc/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/grid.cern.ch/etc/grid-security/vomses
+              elif [ -d /cvmfs/oasis.opensciencegrid.org/mis/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/oasis.opensciencegrid.org/mis/certificates
+                export X509_VOMS_DIR=/cvmfs/oasis.opensciencegrid.org/mis/vodata/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/oasis.opensciencegrid.org/mis/vodata/vomses
+              else
+                echo "FATAL: no CVMFS grid repo found" >&2
+                exit 1
+              fi
+              export XRD_NETWORKSTACK=IPv4
+
+              git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
+              cd /tmp/collide2vchallenges/preprocessing
+              pip install --quiet -r requirements.txt
+
+              echo "=== Starting conversion: $(date) ==="
+              python -u convert_data.py \
+                --config ../C1_HH4b/dataconfig.yml --overwrite
+
+              echo "=== Job finished: $(date) ==="
+
+          env:
+            - name: X509_USER_PROXY
+              value: /etc/grid-security-ro/x509up
+
+          resources:
+            # TODO: adjust once target_events is finalized -- see
+            # preprocess_template.yaml's identical comment for sizing
+            # guidance (raw-pT selection needs far more memory than weighted).
+            requests: {memory: "32Gi", cpu: "4"}
+            limits: {memory: "32Gi", cpu: "4"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/collide2vchallenges   # matches C1_HH4b/dataconfig.yml's out_path prefix
+            - name: x509-proxy
+              mountPath: /etc/grid-security-ro
+              readOnly: true
+            - name: cvmfs
+              mountPath: /cvmfs
+              mountPropagation: HostToContainer
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: collide2vchallenges
+        - name: x509-proxy
+          secret:
+            secretName: x509-proxy-mquinnan-ucsd-edu
+            defaultMode: 0400
+        - name: cvmfs
+          persistentVolumeClaim:
+            claimName: cvmfs

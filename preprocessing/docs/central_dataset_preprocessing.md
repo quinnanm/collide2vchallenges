@@ -1,5 +1,11 @@
 # Central preprocessed dataset: schema reference
 
+**A config-driven generalization of this design now exists** (per-project
+process lists/event counts/collections/train-eval split via a `dataconfig.yml`,
+no code changes needed) -- see `docs/challenge_dataconfig.md`. Everything
+below is still an accurate description of `collide-1m-ptrawv1.0` specifically,
+which predates that system and uses none of its new keys.
+
 This documents `/collide2vsubset/collide-1m-ptrawv1.0/` — the current production
 dataset, built from `configs/data/convert_collide_1m_ptrawv1.yaml` /
 `nrp/preprocess/preprocess_collide_1m_ptrawv1.yaml`. It replaces the earlier

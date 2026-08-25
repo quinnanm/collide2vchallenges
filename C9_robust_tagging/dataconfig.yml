@@ -1,0 +1,31 @@
+# C9: robust tagging challenge dataset config.
+# STUB -- see preprocessing/docs/challenge_dataconfig.md for the full key
+# reference. Nothing challenge-specific is filled in here yet: a "robust
+# tagging" dataset's process list/event counts/collections (and whatever
+# "robustness" axis the challenge is testing -- different pileup/dataset
+# slices? held-out processes?) is a challenge-design decision, not something
+# to guess at in this stub.
+# NOTE: convert_data.py deliberately errors on an empty `samples:`/
+# `collections:` -- this stub won't run until both are filled in.
+ds_name: C9_robust_tagging
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/collide2vchallenges/C9_robust_tagging"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
+  dataset_version: collide2v_v1.0
+
+  # TODO: real process list + per-process target_events + explicit labels.
+  samples: []
+
+  # TODO: which collections this tagging challenge needs (likely
+  # L1T_JetAK4/JetPuppiAK4 at minimum for a jet-tagging task).
+  collections: {}
+
+  split:
+    train_frac: 0.9
+    eval_frac: 0.1
+    seed: 42
+
+  flush_every_events: 2000000
+  report_diagnostics: false

@@ -72,12 +72,18 @@ secret name.
 python convert_data.py --config configs/example_convert.yaml --overwrite
 ```
 
-Output: one `<out_path>/<sample>/<sample>.parquet` per sample, plus a
-`<sample>_source_files.txt` listing which EOS files went into it. See
+Output: `<out_path>/<sample>/<sample>_NNNNN.parquet` fragment(s) per sample,
+plus a `<sample>_source_files.txt` listing which EOS files went into it. See
 `converters.py`'s `convert_collide2v_regionized()` docstring for the full
 `data_processing:` config reference (candidate selection mode, diagnostics,
 dataset-version filtering) and `docs/central_dataset_preprocessing.md` for
 the design rationale behind each default.
+
+**Need a different process list / event counts / collections / train-eval
+split per project (e.g. one `dataconfig.yml` per hackathon challenge)?** See
+`docs/challenge_dataconfig.md` and `configs/example_challenge_dataconfig.yaml`
+for the config-driven system built on top of this same code -- every new key
+is optional and falls back to the behavior described above when omitted.
 
 On a Kubernetes cluster: `nrp/preprocess_template.yaml` is a starting point
 -- every namespace/PVC/secret-specific line is marked `EDIT`.
