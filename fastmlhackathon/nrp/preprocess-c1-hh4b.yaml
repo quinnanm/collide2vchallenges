@@ -38,6 +38,9 @@ spec:
               fi
               export XRD_NETWORKSTACK=IPv4
 
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
               git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
               cd /tmp/collide2vchallenges/preprocessing
               pip install --quiet -r requirements.txt

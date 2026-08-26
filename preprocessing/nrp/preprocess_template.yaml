@@ -51,7 +51,11 @@ spec:
               # them, or a ConfigMap. There's no code to install here beyond
               # requirements.txt -- config.py/constants.py/regionize.py/
               # converters.py/convert_data.py are plain scripts, not a
-              # package.
+              # package. NOTE: python:3.11-slim has no `git` -- if cloning,
+              # install it first (apt-get update && apt-get install -y
+              # --no-install-recommends git ca-certificates), confirmed
+              # needed the hard way (a job failed on "git: command not
+              # found" before this was added).
               cd /path/to/collide2vpreproc
               pip install --quiet -r requirements.txt
 
