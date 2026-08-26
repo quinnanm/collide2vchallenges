@@ -1,9 +1,31 @@
 # C5: foundation model challenge dataset config.
-# STUB -- see preprocessing/docs/challenge_dataconfig.md for the full key
-# reference. Nothing challenge-specific is filled in here yet: a foundation-
-# model dataset's process list/event counts/collections are a challenge-
-# design decision (likely a broad, high-statistics process mix, given the
-# "foundation model" framing), not something to guess at in this stub.
+# See preprocessing/docs/challenge_dataconfig.md for the full key reference.
+#
+# Sample list: every EOS process directory documented in
+# docs/eos_dataset_schema.md (27 background dirs + 24 signal dirs = 51),
+# 1,000,000 target_events each -- the broad, high-statistics mix a
+# foundation-model pretraining dataset wants, as opposed to C1_HH4b's small,
+# task-specific process list. `collections:`/`candidate_selection:`/`split:`
+# below are unchanged from C1_HH4b (same object/candidate schema).
+#
+# The "*" the user's process list marked on QCD_HT50tobb/gamma/minbias/
+# upsilon_to_leptons isn't a documented convention anywhere in this repo --
+# possibly flagging samples suspected of NOT being tagged dataset_version:
+# collide2v_v1.0 (early/testing-stage files only, per
+# docs/central_dataset_preprocessing.md's dataset_version-mixing caveat), or
+# something else entirely. Not guessed at here either way: every sample
+# below is listed the same way, and the dataset_version filter already
+# unconditionally excludes any non-matching file at conversion time (a
+# sample where NONE of its files match ends up with 0 usable files, which
+# convert_data.py logs and skips rather than erroring). estimate_output_size.py
+# surfaces this per-sample in its "Per-sample measurement basis / warnings"
+# section already (e.g. "every sampled event was dropped" / a near-zero
+# version-match rate) -- no config or code change needed for that, just run
+# it and read that section for which of these (if any) turn out to have
+# no/few usable files.
+#
+# No event_selection on QCD here (unlike C1_HH4b's ScalarHT>240 cut) --
+# not requested for this dataset.
 ds_name: C5_foundation_model
 
 data_processing:
@@ -12,18 +34,118 @@ data_processing:
   out_path: "/mnt/collide2vchallenges/C5_foundation_model"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
-  # TODO: real process list + per-process target_events + explicit labels.
-  # docs/eos_dataset_schema.md lists all 53 available EOS sample directories
-  # (29 backgrounds + 24 signals) if a broad mix is wanted.
-  # NOTE: convert_data.py deliberately errors on an empty `samples:`/
-  # `collections:` -- this stub won't run until both are filled in.
-  samples: []
+  # label: 0=background, 1=signal (binary, matching eos_dataset_schema.md's
+  # own background/signal split) -- not a per-process multi-class scheme
+  # like C1_HH4b's, since this dataset's purpose is broad pretraining
+  # coverage rather than a specific supervised classification task.
+  samples:
+    # -- backgrounds (label 0) --
+    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: minbias, label: 0, target_events: 1000000}
+    - {name: QCD_HT50toInf, label: 0, target_events: 1000000}
+    - {name: QCD_HT50tobb, label: 0, target_events: 1000000}
+    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
+    - {name: WW_hadronic, label: 0, target_events: 1000000}
+    - {name: WW_leptonic, label: 0, target_events: 1000000}
+    - {name: WW_semileptonic, label: 0, target_events: 1000000}
+    - {name: WZ_hadronic, label: 0, target_events: 1000000}
+    - {name: WZ_leptonic, label: 0, target_events: 1000000}
+    - {name: WZ_semileptonic, label: 0, target_events: 1000000}
+    - {name: ZZ_hadronic, label: 0, target_events: 1000000}
+    - {name: ZZ_leptonic, label: 0, target_events: 1000000}
+    - {name: ZZ_semileptonic, label: 0, target_events: 1000000}
+    - {name: VVV_incl, label: 0, target_events: 1000000}
+    - {name: gamma, label: 0, target_events: 1000000}
+    - {name: gamma_V, label: 0, target_events: 1000000}
+    - {name: tri_gamma, label: 0, target_events: 1000000}
+    - {name: upsilon_to_leptons, label: 0, target_events: 1000000}
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 1000000}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 1000000}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 1000000}
 
-  # TODO: which collections a foundation-model pretraining dataset needs --
-  # likely the PUPPI candidate collection (L1T_PUPPIPart) at minimum, since
-  # that's what AIDA-Scout's own axis-2 contrastive encoder consumes; left
-  # unset here pending the actual challenge design.
-  collections: {}
+    # -- signals (label 1) --
+    - {name: HH_4b, label: 1, target_events: 1000000}
+    - {name: HH_bbWW, label: 1, target_events: 1000000}
+    - {name: HH_bbZZ, label: 1, target_events: 1000000}
+    - {name: HH_bbgammagamma, label: 1, target_events: 1000000}
+    - {name: HH_bbtautau, label: 1, target_events: 1000000}
+    - {name: VBFHWW, label: 1, target_events: 1000000}
+    - {name: VBFHZZ, label: 1, target_events: 1000000}
+    - {name: VBFHbb, label: 1, target_events: 1000000}
+    - {name: VBFHcc, label: 1, target_events: 1000000}
+    - {name: VBFHgammagamma, label: 1, target_events: 1000000}
+    - {name: VBFHgluglu, label: 1, target_events: 1000000}
+    - {name: VBFHtautau, label: 1, target_events: 1000000}
+    - {name: VH_incl, label: 1, target_events: 1000000}
+    - {name: ggHWW, label: 1, target_events: 1000000}
+    - {name: ggHZZ, label: 1, target_events: 1000000}
+    - {name: ggHbb, label: 1, target_events: 1000000}
+    - {name: ggHcc, label: 1, target_events: 1000000}
+    - {name: ggHgammagamma, label: 1, target_events: 1000000}
+    - {name: ggHgluglu, label: 1, target_events: 1000000}
+    - {name: ggHtautau, label: 1, target_events: 1000000}
+    - {name: ttH_incl, label: 1, target_events: 1000000}
+    - {name: ttW_incl, label: 1, target_events: 1000000}
+    - {name: ttZ_incl, label: 1, target_events: 1000000}
+    - {name: tttt_incl, label: 1, target_events: 1000000}
+
+  #per collection caps, object selection, and field drops. These are applied
+  #after the per-sample event selection above
+  collections:
+    L1T_PUPPIPart:
+      cap: 18                # candidates kept PER REGION
+      total_cap: 500          # secondary ceiling on the flattened per-event total after region selection
+      drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
+    L1T_Electron:
+      cap: 5                 # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    L1T_JetAK4:
+      cap: 25                # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
+    L1T_JetAK8:
+      cap: 5                 # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]
+    L1T_MuonTight:
+      cap: 5                 # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    L1T_PhotonTight:
+      cap: 3                 # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    L1T_JetPuppiAK4:
+      cap: 10                # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
+    L1T_JetPuppiAK8:
+      cap: 5                 # observed max
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]  # generator-level parton flavor -- exclude gen-level variables
+    L1T_MET: 1
+    L1T_PUPPIMET: 1
+    L1T_ScalarHT: 1
+
+  # region-geometry candidate selection, as requested ("geometry selection").
+  # pt: raw + floor_gev: 1.0 together ARE the "raw pt>1"
+  # realistic_pid: true is the "standard non-gen PID selection"
+  # (the sanitized 5-bucket scheme, not raw/truth-adjacent PID).
+  candidate_selection:
+    mode: region
+    pt: raw
+    floor_gev: 1.0
+    realistic_pid: true
 
   split:
     train_frac: 0.9
