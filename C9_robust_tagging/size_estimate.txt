@@ -1,0 +1,642 @@
+Dataset size estimate for /mnt/collide2vchallenges/C9_robust_tagging
+(generated 2026-08-26T04:57:01, from ../C9_robust_tagging/dataconfig.yml)
+
+full dataset total # events: 5,943,054
+train total # events: 5,348,748
+eval total # events: 594,305
+
+full dataset size: 105.72 GB
+train size: 95.15 GB
+eval size: 10.57 GB
+
+------------------------------------------------------------------------------
+/mnt/collide2vchallenges/C9_robust_tagging/train/QCD_HT50toInf
+  total # events: 901,513
+  # parquet files: 1
+  approx size per file: 15.97 GB
+  total size: 15.97 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/QCD_HT50toInf
+  total # events: 100,168
+  # parquet files: 1
+  approx size per file: 1.77 GB
+  total size: 1.77 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 188,376
+  # parquet files: 1
+  approx size per file: 3.21 GB
+  total size: 3.21 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 20,931
+  # parquet files: 1
+  approx size per file: 365.60 MB
+  total size: 365.60 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/DYJetsToLL_13TeV-madgraphMLM-pythia8
+  total # events: 188,877
+  # parquet files: 1
+  approx size per file: 3.13 GB
+  total size: 3.13 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/DYJetsToLL_13TeV-madgraphMLM-pythia8
+  total # events: 20,986
+  # parquet files: 1
+  approx size per file: 356.62 MB
+  total size: 356.62 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 185,589
+  # parquet files: 1
+  approx size per file: 3.50 GB
+  total size: 3.50 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 20,621
+  # parquet files: 1
+  approx size per file: 397.76 MB
+  total size: 397.76 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 184,984
+  # parquet files: 1
+  approx size per file: 3.42 GB
+  total size: 3.42 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 20,554
+  # parquet files: 1
+  approx size per file: 388.96 MB
+  total size: 388.96 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 185,286
+  # parquet files: 1
+  approx size per file: 3.39 GB
+  total size: 3.39 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 20,587
+  # parquet files: 1
+  approx size per file: 385.61 MB
+  total size: 385.61 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 188,754
+  # parquet files: 1
+  approx size per file: 3.27 GB
+  total size: 3.27 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 20,973
+  # parquet files: 1
+  approx size per file: 372.47 MB
+  total size: 372.47 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 188,594
+  # parquet files: 1
+  approx size per file: 3.29 GB
+  total size: 3.29 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 20,955
+  # parquet files: 1
+  approx size per file: 374.63 MB
+  total size: 374.63 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZJetsTobb_13TeV-madgraphMLM-pythia8
+  total # events: 188,546
+  # parquet files: 1
+  approx size per file: 3.30 GB
+  total size: 3.30 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZJetsTobb_13TeV-madgraphMLM-pythia8
+  total # events: 20,950
+  # parquet files: 1
+  approx size per file: 375.33 MB
+  total size: 375.33 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZJetsTocc_13TeV-madgraphMLM-pythia8
+  total # events: 188,679
+  # parquet files: 1
+  approx size per file: 3.30 GB
+  total size: 3.30 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZJetsTocc_13TeV-madgraphMLM-pythia8
+  total # events: 20,964
+  # parquet files: 1
+  approx size per file: 375.65 MB
+  total size: 375.65 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZJetsTovv_13TeV-madgraphMLM-pythia8
+  total # events: 187,753
+  # parquet files: 1
+  approx size per file: 3.25 GB
+  total size: 3.25 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZJetsTovv_13TeV-madgraphMLM-pythia8
+  total # events: 20,861
+  # parquet files: 1
+  approx size per file: 369.41 MB
+  total size: 369.41 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WW_hadronic
+  total # events: 35,356
+  # parquet files: 1
+  approx size per file: 664.25 MB
+  total size: 664.25 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WW_hadronic
+  total # events: 3,928
+  # parquet files: 1
+  approx size per file: 73.81 MB
+  total size: 73.81 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WW_leptonic
+  total # events: 35,323
+  # parquet files: 1
+  approx size per file: 652.83 MB
+  total size: 652.83 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WW_leptonic
+  total # events: 3,925
+  # parquet files: 1
+  approx size per file: 72.54 MB
+  total size: 72.54 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WW_semileptonic
+  total # events: 35,424
+  # parquet files: 1
+  approx size per file: 649.42 MB
+  total size: 649.42 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WW_semileptonic
+  total # events: 3,936
+  # parquet files: 1
+  approx size per file: 72.16 MB
+  total size: 72.16 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WZ_hadronic
+  total # events: 35,649
+  # parquet files: 1
+  approx size per file: 663.24 MB
+  total size: 663.24 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WZ_hadronic
+  total # events: 3,961
+  # parquet files: 1
+  approx size per file: 73.69 MB
+  total size: 73.69 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WZ_leptonic
+  total # events: 35,521
+  # parquet files: 1
+  approx size per file: 657.69 MB
+  total size: 657.69 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WZ_leptonic
+  total # events: 3,947
+  # parquet files: 1
+  approx size per file: 73.08 MB
+  total size: 73.08 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/WZ_semileptonic
+  total # events: 35,678
+  # parquet files: 1
+  approx size per file: 656.40 MB
+  total size: 656.40 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/WZ_semileptonic
+  total # events: 3,964
+  # parquet files: 1
+  approx size per file: 72.93 MB
+  total size: 72.93 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZZ_hadronic
+  total # events: 35,865
+  # parquet files: 1
+  approx size per file: 652.33 MB
+  total size: 652.33 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZZ_hadronic
+  total # events: 3,985
+  # parquet files: 1
+  approx size per file: 72.48 MB
+  total size: 72.48 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZZ_leptonic
+  total # events: 35,786
+  # parquet files: 1
+  approx size per file: 649.70 MB
+  total size: 649.70 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZZ_leptonic
+  total # events: 3,976
+  # parquet files: 1
+  approx size per file: 72.19 MB
+  total size: 72.19 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ZZ_semileptonic
+  total # events: 35,836
+  # parquet files: 1
+  approx size per file: 636.16 MB
+  total size: 636.16 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ZZ_semileptonic
+  total # events: 3,982
+  # parquet files: 1
+  approx size per file: 70.68 MB
+  total size: 70.68 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/gamma
+  total # events: 181,756
+  # parquet files: 1
+  approx size per file: 3.07 GB
+  total size: 3.07 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/gamma
+  total # events: 20,195
+  # parquet files: 1
+  approx size per file: 349.49 MB
+  total size: 349.49 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/gamma_V
+  total # events: 73,023
+  # parquet files: 1
+  approx size per file: 1.28 GB
+  total size: 1.28 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/gamma_V
+  total # events: 8,114
+  # parquet files: 1
+  approx size per file: 145.48 MB
+  total size: 145.48 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/upsilon_to_leptons
+  total # events: 180,000
+  # parquet files: 1
+  approx size per file: 3.03 GB
+  total size: 3.03 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/upsilon_to_leptons
+  total # events: 20,000
+  # parquet files: 1
+  approx size per file: 344.85 MB
+  total size: 344.85 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VVV_incl
+  total # events: 26,676
+  # parquet files: 1
+  approx size per file: 501.10 MB
+  total size: 501.10 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VVV_incl
+  total # events: 2,964
+  # parquet files: 1
+  approx size per file: 55.68 MB
+  total size: 55.68 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/HH_4b
+  total # events: 26,984
+  # parquet files: 1
+  approx size per file: 518.17 MB
+  total size: 518.17 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/HH_4b
+  total # events: 2,998
+  # parquet files: 1
+  approx size per file: 57.57 MB
+  total size: 57.57 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/HH_bbWW
+  total # events: 24,247
+  # parquet files: 1
+  approx size per file: 461.25 MB
+  total size: 461.25 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/HH_bbWW
+  total # events: 2,694
+  # parquet files: 1
+  approx size per file: 51.25 MB
+  total size: 51.25 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/HH_bbZZ
+  total # events: 24,165
+  # parquet files: 1
+  approx size per file: 464.46 MB
+  total size: 464.46 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/HH_bbZZ
+  total # events: 2,685
+  # parquet files: 1
+  approx size per file: 51.61 MB
+  total size: 51.61 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/HH_bbgammagamma
+  total # events: 26,984
+  # parquet files: 1
+  approx size per file: 503.21 MB
+  total size: 503.21 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/HH_bbgammagamma
+  total # events: 2,998
+  # parquet files: 1
+  approx size per file: 55.91 MB
+  total size: 55.91 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/HH_bbtautau
+  total # events: 26,984
+  # parquet files: 1
+  approx size per file: 501.07 MB
+  total size: 501.07 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/HH_bbtautau
+  total # events: 2,998
+  # parquet files: 1
+  approx size per file: 55.67 MB
+  total size: 55.67 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHWW
+  total # events: 92,219
+  # parquet files: 1
+  approx size per file: 1.67 GB
+  total size: 1.67 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHWW
+  total # events: 10,247
+  # parquet files: 1
+  approx size per file: 189.54 MB
+  total size: 189.54 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHZZ
+  total # events: 91,049
+  # parquet files: 1
+  approx size per file: 1.63 GB
+  total size: 1.63 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHZZ
+  total # events: 10,117
+  # parquet files: 1
+  approx size per file: 185.46 MB
+  total size: 185.46 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHbb
+  total # events: 93,868
+  # parquet files: 1
+  approx size per file: 1.70 GB
+  total size: 1.70 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHbb
+  total # events: 10,430
+  # parquet files: 1
+  approx size per file: 193.72 MB
+  total size: 193.72 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHcc
+  total # events: 96,661
+  # parquet files: 1
+  approx size per file: 1.78 GB
+  total size: 1.78 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHcc
+  total # events: 10,740
+  # parquet files: 1
+  approx size per file: 202.62 MB
+  total size: 202.62 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHgammagamma
+  total # events: 91,985
+  # parquet files: 1
+  approx size per file: 1.64 GB
+  total size: 1.64 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHgammagamma
+  total # events: 10,221
+  # parquet files: 1
+  approx size per file: 186.88 MB
+  total size: 186.88 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHgluglu
+  total # events: 91,951
+  # parquet files: 1
+  approx size per file: 1.66 GB
+  total size: 1.66 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHgluglu
+  total # events: 10,217
+  # parquet files: 1
+  approx size per file: 188.58 MB
+  total size: 188.58 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VBFHtautau
+  total # events: 94,765
+  # parquet files: 1
+  approx size per file: 1.74 GB
+  total size: 1.74 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VBFHtautau
+  total # events: 10,529
+  # parquet files: 1
+  approx size per file: 197.80 MB
+  total size: 197.80 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHWW
+  total # events: 98,916
+  # parquet files: 1
+  approx size per file: 1.78 GB
+  total size: 1.78 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHWW
+  total # events: 10,991
+  # parquet files: 1
+  approx size per file: 202.01 MB
+  total size: 202.01 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHZZ
+  total # events: 98,861
+  # parquet files: 1
+  approx size per file: 1.78 GB
+  total size: 1.78 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHZZ
+  total # events: 10,985
+  # parquet files: 1
+  approx size per file: 202.77 MB
+  total size: 202.77 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHbb
+  total # events: 98,965
+  # parquet files: 1
+  approx size per file: 1.77 GB
+  total size: 1.77 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHbb
+  total # events: 10,996
+  # parquet files: 1
+  approx size per file: 201.45 MB
+  total size: 201.45 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHcc
+  total # events: 98,866
+  # parquet files: 1
+  approx size per file: 1.80 GB
+  total size: 1.80 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHcc
+  total # events: 10,985
+  # parquet files: 1
+  approx size per file: 204.33 MB
+  total size: 204.33 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHgammagamma
+  total # events: 98,896
+  # parquet files: 1
+  approx size per file: 1.74 GB
+  total size: 1.74 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHgammagamma
+  total # events: 10,988
+  # parquet files: 1
+  approx size per file: 197.42 MB
+  total size: 197.42 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHgluglu
+  total # events: 98,931
+  # parquet files: 1
+  approx size per file: 1.76 GB
+  total size: 1.76 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHgluglu
+  total # events: 10,992
+  # parquet files: 1
+  approx size per file: 200.15 MB
+  total size: 200.15 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ggHtautau
+  total # events: 98,911
+  # parquet files: 1
+  approx size per file: 1.75 GB
+  total size: 1.75 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ggHtautau
+  total # events: 10,990
+  # parquet files: 1
+  approx size per file: 198.90 MB
+  total size: 198.90 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/VH_incl
+  total # events: 98,431
+  # parquet files: 1
+  approx size per file: 1.75 GB
+  total size: 1.75 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/VH_incl
+  total # events: 10,937
+  # parquet files: 1
+  approx size per file: 199.53 MB
+  total size: 199.53 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ttW_incl
+  total # events: 50,952
+  # parquet files: 1
+  approx size per file: 980.79 MB
+  total size: 980.79 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ttW_incl
+  total # events: 5,661
+  # parquet files: 1
+  approx size per file: 108.98 MB
+  total size: 108.98 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ttZ_incl
+  total # events: 52,075
+  # parquet files: 1
+  approx size per file: 1,023.74 MB
+  total size: 1,023.74 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ttZ_incl
+  total # events: 5,786
+  # parquet files: 1
+  approx size per file: 113.75 MB
+  total size: 113.75 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/ttH_incl
+  total # events: 96,238
+  # parquet files: 1
+  approx size per file: 1.86 GB
+  total size: 1.86 GB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/ttH_incl
+  total # events: 10,693
+  # parquet files: 1
+  approx size per file: 211.33 MB
+  total size: 211.33 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/train/tttt_incl
+  total # events: 18,000
+  # parquet files: 1
+  approx size per file: 364.77 MB
+  total size: 364.77 MB
+
+/mnt/collide2vchallenges/C9_robust_tagging/eval/tttt_incl
+  total # events: 2,000
+  # parquet files: 1
+  approx size per file: 40.53 MB
+  total size: 40.53 MB
+
+------------------------------------------------------------------------------
+
+Per-sample measurement basis / warnings:
+  QCD_HT50toInf: measured 2/13126 files (50/50 version-matched, ~13126 est. total-match count)
+  WJetsToLNu_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  DYJetsToLL_13TeV-madgraphMLM-pythia8: measured 2/2371 files (49/50 version-matched, ~2324 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_hadronic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_semiLeptonic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_leptonic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  WJetsToQQ_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsToQQ_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTobb_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTocc_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTovv_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  WW_hadronic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WW_leptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WW_semileptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WZ_hadronic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  WZ_leptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  WZ_semileptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  ZZ_hadronic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  ZZ_leptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  ZZ_semileptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  gamma: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  gamma_V: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  upsilon_to_leptons: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  VVV_incl: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  HH_4b: measured 2/2000 files (50/50 version-matched, ~2000 est. total-match count)
+  HH_bbWW: measured 2/231 files (50/50 version-matched, ~231 est. total-match count)
+  HH_bbZZ: measured 2/231 files (50/50 version-matched, ~231 est. total-match count)
+  HH_bbgammagamma: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  HH_bbtautau: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  VBFHWW: measured 2/1313 files (50/50 version-matched, ~1313 est. total-match count)
+  VBFHZZ: measured 2/1313 files (50/50 version-matched, ~1313 est. total-match count)
+  VBFHbb: measured 2/1208 files (50/50 version-matched, ~1208 est. total-match count)
+  VBFHcc: measured 2/1418 files (50/50 version-matched, ~1418 est. total-match count)
+  VBFHgammagamma: measured 2/1292 files (50/50 version-matched, ~1292 est. total-match count)
+  VBFHgluglu: measured 2/1155 files (50/50 version-matched, ~1155 est. total-match count)
+  VBFHtautau: measured 2/1365 files (50/50 version-matched, ~1365 est. total-match count)
+  ggHWW: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHZZ: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHbb: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHcc: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHgammagamma: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHgluglu: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHtautau: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  VH_incl: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ttW_incl: measured 2/578 files (50/50 version-matched, ~578 est. total-match count)
+  ttZ_incl: measured 2/579 files (49/50 version-matched, ~567 est. total-match count)
+  ttH_incl: measured 2/1103 files (50/50 version-matched, ~1103 est. total-match count)
+  tttt_incl: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+
+Note: sizes are extrapolated from a small real-data sample per process -- treat as an estimate,
+not an exact figure. Re-run with --sample-files/--version-scan-limit higher for tighter estimates.

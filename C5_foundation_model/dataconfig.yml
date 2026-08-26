@@ -41,7 +41,7 @@ data_processing:
   samples:
     # -- backgrounds (label 0) --
     - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: minbias, label: 0, target_events: 1000000}
+    #- {name: minbias, label: 0, target_events: 1000000}
     - {name: QCD_HT50toInf, label: 0, target_events: 1000000}
     - {name: QCD_HT50tobb, label: 0, target_events: 1000000}
     - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
