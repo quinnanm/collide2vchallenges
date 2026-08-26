@@ -86,8 +86,11 @@ PF_TRUTH_ONLY_FIELDS = {"is_pu", "is_reco_pu"}
 # requests one of those two).
 #
 # kind:
-#   "candidate"       -- L1T_PUPPIPart only. Special-cased region/flat_topn
-#                         selection logic, see gather_and_select_puppi_candidates.
+#   "candidate"       -- L1T_PUPPIPart or FullReco_PUPPIPart (exactly one may
+#                         be requested at a time -- candidate_selection: is a
+#                         single global block, not per-collection).
+#                         Special-cased region/flat_topn selection logic, see
+#                         gather_and_select_puppi_candidates.
 #   "fixed_scalar"     -- always fully populated (MET/Rho/ScalarHT-style
 #                         event-level scalars, or Event_* MC metadata); a
 #                         configured cap/object_selection is ignored for these
@@ -128,11 +131,15 @@ COLLECTION_REGISTRY = {
     "L1T_Rho": {"kind": "fixed_scalar", "fields": ["Rho"]},
     "L1T_ScalarHT": {"kind": "fixed_scalar", "fields": ["HT"]},
 
-    # FullReco_* mirrors L1T_* field-for-field (see docs/eos_dataset_schema.md)
-    # but is NOT pre-padded/region-selected the way L1T_PUPPIPart is -- even
-    # FullReco_PUPPIPart/PFPart are plain variable_object collections here,
-    # no region geometry applied to them.
-    "FullReco_PUPPIPart": {"kind": "variable_object", "fields": PUPPI_CAND_RAW_FIELDS, "rank_field": "PT"},
+    # FullReco_* mirrors L1T_* field-for-field (see docs/eos_dataset_schema.md).
+    # FullReco_PUPPIPart shares L1T_PUPPIPart's exact raw field set, so it
+    # can use the SAME region-geometry candidate design (candidate_selection:
+    # mode/pt/floor_gev/realistic_pid, collections.<name>.total_cap) when
+    # requested instead of L1T_PUPPIPart -- see gather_and_select_puppi_candidates's
+    # `prefix` parameter. FullReco_PFPart stays a plain variable_object
+    # (mirrors L1T_PFPart's exclusion from the candidate design -- redundant
+    # with unweighted PUPPIPart, not given the special treatment).
+    "FullReco_PUPPIPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
     "FullReco_PFPart": {"kind": "variable_object", "fields": PUPPI_CAND_RAW_FIELDS, "rank_field": "PT"},
     "FullReco_Electron": {"kind": "variable_object", "fields": _ELECTRON_FIELDS, "rank_field": "PT"},
     "FullReco_MuonTight": {"kind": "variable_object", "fields": _MUON_FIELDS, "rank_field": "PT"},
@@ -227,7 +234,8 @@ def _normalize_collection_entry(entry):
     """A `collections:` value can be a plain cap (int, or null for no cap --
     the common case) or a dict `{cap, object_selection, drop_fields, total_cap}`
     for finer per-collection control. Always returns (cap, object_selection_list,
-    drop_fields_set, total_cap). `total_cap` is L1T_PUPPIPart-only (see
+    drop_fields_set, total_cap). `total_cap` only applies to a candidate-kind
+    collection (L1T_PUPPIPart/FullReco_PUPPIPart -- see
     gather_and_select_puppi_candidates) -- validated elsewhere, not here."""
     if entry is None or isinstance(entry, int):
         return entry, [], set(), None
@@ -407,8 +415,11 @@ def gather_and_select_puppi_candidates(arr: ak.Array, selection_pt: str = "weigh
                                         cap: int = CANDIDATES_PER_REGION,
                                         floor_gev: float = CANDIDATE_PT_FLOOR_GEV,
                                         object_selection: list = None, drop_fields: set = None,
-                                        realistic_pid: bool = True, total_cap: int = None) -> ak.Array:
-    """The core of the new design: read raw L1T_PUPPIPart fields, compute
+                                        realistic_pid: bool = True, total_cap: int = None,
+                                        prefix: str = "L1T_PUPPIPart") -> ak.Array:
+    """The core of the new design: read raw L1T_PUPPIPart (or, via `prefix`,
+    FullReco_PUPPIPart -- the only other COLLECTION_REGISTRY entry with
+    kind="candidate", sharing the exact same raw field set) fields, compute
     the realistic pdgId + PUPPI-weighted pT, select candidates by `selection_pt`
     with a flat `floor_gev` floor applied before truncation, then return the
     survivors flattened per event and sorted by RAW pT descending (see
@@ -492,7 +503,6 @@ def gather_and_select_puppi_candidates(arr: ak.Array, selection_pt: str = "weigh
         raise ValueError(f"selection_pt must be 'weighted', 'raw', or 'none', got {selection_pt!r}")
     if mode not in ("region", "flat_topn"):
         raise ValueError(f"mode must be 'region' or 'flat_topn', got {mode!r}")
-    prefix = "L1T_PUPPIPart"
     n_events = len(arr)
 
     # Per-event candidate counts are NOT uniform within a file (confirmed by
@@ -536,7 +546,7 @@ def gather_and_select_puppi_candidates(arr: ak.Array, selection_pt: str = "weigh
         for cut in object_selection:
             field = cut["field"]
             if field not in _raw_field_map:
-                raise ValueError(f"L1T_PUPPIPart object_selection: unknown field {field!r} -- must be one "
+                raise ValueError(f"{prefix} object_selection: unknown field {field!r} -- must be one "
                                   f"of {sorted(_raw_field_map)}")
             obj_keep &= _COMPARISON_OPS[cut["op"]](_raw_field_map[field].astype(np.float64), cut["value"])
 
@@ -655,7 +665,8 @@ def _drop_events_with_empty_axis(cands, others: dict, n_events: int, want_candid
 
 def diagnose_puppi_selection(arr: ak.Array, selection_pt: str = "weighted",
                               cap: int = CANDIDATES_PER_REGION,
-                              floor_gev: float = CANDIDATE_PT_FLOOR_GEV) -> dict:
+                              floor_gev: float = CANDIDATE_PT_FLOOR_GEV,
+                              prefix: str = "L1T_PUPPIPart") -> dict:
     """Per-candidate accounting of WHY each L1T_PUPPIPart candidate was or
     wasn't kept by gather_and_select_puppi_candidates's "region" mode -- not
     called by the production path, purely for reporting how much (and where)
@@ -683,7 +694,6 @@ def diagnose_puppi_selection(arr: ak.Array, selection_pt: str = "weighted",
     """
     if selection_pt not in ("weighted", "raw"):
         raise ValueError(f"selection_pt must be 'weighted' or 'raw', got {selection_pt!r}")
-    prefix = "L1T_PUPPIPart"
     n_events = len(arr)
 
     counts_per_event = ak.to_numpy(ak.num(arr[f"{prefix}_PT"], axis=1)).astype(np.int64)
@@ -1049,7 +1059,9 @@ def _resolve_candidate_selection_cfg(cfg: DataConfig) -> dict:
 
 
 def _resolve_collections_cfg(cfg: DataConfig) -> dict:
-    """Parse+validate `collections:`. Returns {want_candidates, candidate_cap,
+    """Parse+validate `collections:`. Returns {want_candidates,
+    candidate_collection (the collection name driving the region/flat_topn
+    design -- "L1T_PUPPIPart", "FullReco_PUPPIPart", or None), candidate_cap,
     candidate_object_selection, candidate_drop_fields, candidate_total_cap,
     other_collections_cfg (name -> (cap, object_selection, drop_fields,
     total_cap)), candidate_columns, other_columns (raw column-name lists for
@@ -1063,37 +1075,46 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
     if unknown:
         raise ValueError(f"data_processing.collections: unknown collection(s) {unknown} -- see "
                           f"COLLECTION_REGISTRY in converters.py for supported names.")
+    candidate_names = [name for name in collections_cfg_raw if COLLECTION_REGISTRY[name]["kind"] == "candidate"]
+    if len(candidate_names) > 1:
+        raise ValueError(f"data_processing.collections: only one candidate-kind collection (L1T_PUPPIPart or "
+                          f"FullReco_PUPPIPart) can be requested at a time -- candidate_selection: is a single "
+                          f"global block, not per-collection. Got: {candidate_names}")
+    candidate_collection = candidate_names[0] if candidate_names else None
+
     collections_cfg = {}
     for name, entry in collections_cfg_raw.items():
         cap, object_selection, drop_fields, total_cap = _normalize_collection_entry(entry)
         spec = COLLECTION_REGISTRY[name]
-        if total_cap is not None and name != "L1T_PUPPIPart":
-            raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for "
-                              f"L1T_PUPPIPart (a secondary post-selection ceiling on the region-based "
-                              f"candidate list) -- every other collection's own 'cap' is already the "
-                              f"final per-event object limit.")
+        if total_cap is not None and spec["kind"] != "candidate":
+            raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for a "
+                              f"candidate-kind collection (L1T_PUPPIPart/FullReco_PUPPIPart -- a secondary "
+                              f"post-selection ceiling on the region-based candidate list) -- every other "
+                              f"collection's own 'cap' is already the final per-event object limit.")
         # object_selection always refers to a collection's RAW field names
-        # (spec["fields"]) -- true for L1T_PUPPIPart too (PUPPI_CAND_RAW_FIELDS
-        # is its registry `fields` entry). drop_fields, however, refers to
-        # OUTPUT field names, which for L1T_PUPPIPart differ from its raw
-        # fields (derived/renamed -- see PUPPI_CAND_OUTPUT_FIELDS).
+        # (spec["fields"]) -- true for candidate-kind collections too
+        # (PUPPI_CAND_RAW_FIELDS is their registry `fields` entry).
+        # drop_fields, however, refers to OUTPUT field names, which for a
+        # candidate-kind collection differ from its raw fields (derived/
+        # renamed -- see PUPPI_CAND_OUTPUT_FIELDS).
         _validate_object_selection_cuts(name, spec, object_selection)
-        if name == "L1T_PUPPIPart":
+        if spec["kind"] == "candidate":
             _validate_drop_fields(name, {"fields": PUPPI_CAND_OUTPUT_FIELDS}, drop_fields)
         else:
             _validate_drop_fields(name, spec, drop_fields)
         collections_cfg[name] = (cap, object_selection, drop_fields, total_cap)
 
-    want_candidates = "L1T_PUPPIPart" in collections_cfg
+    want_candidates = candidate_collection is not None
     candidate_cap, candidate_object_selection, candidate_drop_fields, candidate_total_cap = collections_cfg.get(
-        "L1T_PUPPIPart", (CANDIDATES_PER_REGION, [], set(), None))
-    other_collections_cfg = {k: v for k, v in collections_cfg.items() if k != "L1T_PUPPIPart"}
+        candidate_collection, (CANDIDATES_PER_REGION, [], set(), None))
+    other_collections_cfg = {k: v for k, v in collections_cfg.items() if k != candidate_collection}
 
-    candidate_columns = [f"L1T_PUPPIPart_{f}" for f in PUPPI_CAND_RAW_FIELDS] if want_candidates else []
+    candidate_columns = [f"{candidate_collection}_{f}" for f in PUPPI_CAND_RAW_FIELDS] if want_candidates else []
     other_columns = [f"{name}_{f}" for name in other_collections_cfg for f in COLLECTION_REGISTRY[name]["fields"]]
 
     return {
-        "want_candidates": want_candidates, "candidate_cap": candidate_cap,
+        "want_candidates": want_candidates, "candidate_collection": candidate_collection,
+        "candidate_cap": candidate_cap,
         "candidate_object_selection": candidate_object_selection, "candidate_drop_fields": candidate_drop_fields,
         "candidate_total_cap": candidate_total_cap, "other_collections_cfg": other_collections_cfg,
         "candidate_columns": candidate_columns, "other_columns": other_columns,
@@ -1137,7 +1158,8 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
                             candidate_mode: str, candidate_cap, floor_gev: float,
                             candidate_object_selection: list, candidate_drop_fields: set,
                             realistic_pid: bool, candidate_total_cap, other_collections_cfg: dict,
-                            event_selection: list, label: int, source_file_idx: int) -> tuple:
+                            event_selection: list, label: int, source_file_idx: int,
+                            candidate_collection: str = "L1T_PUPPIPart") -> tuple:
     """Shared core of per-file processing: apply event_selection, gather
     every requested collection, apply the empty-axis filter, and build the
     final `record` (ak.Array, with label/source_file/source_row attached).
@@ -1161,7 +1183,8 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
                                                     object_selection=candidate_object_selection,
                                                     drop_fields=candidate_drop_fields,
                                                     realistic_pid=realistic_pid,
-                                                    total_cap=candidate_total_cap)
+                                                    total_cap=candidate_total_cap,
+                                                    prefix=candidate_collection)
     others = {name: gather_collection(arr, name, COLLECTION_REGISTRY[name], cap, n_events_read,
                                        object_selection=object_selection, drop_fields=drop_fields)
               for name, (cap, object_selection, drop_fields, _total_cap) in other_collections_cfg.items()}
@@ -1188,7 +1211,7 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
 
     record_fields = dict(others)
     if cands is not None:
-        record_fields["L1T_PUPPIPart"] = cands
+        record_fields[candidate_collection] = cands
     record_fields["label"] = ak.values_astype(ak.Array(np.full(n_events, label)), np.int8)
     record_fields["source_file"] = ak.values_astype(ak.Array(np.full(n_events, source_file_idx)), np.int32)
     record_fields["source_row"] = ak.values_astype(ak.Array(source_rows), np.int16)
@@ -1255,7 +1278,8 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                      drop_fields: [field, ...] -- output field names to
                        omit entirely (still read, in case object_selection
                        needs one of them).
-                     total_cap: L1T_PUPPIPart only -- a secondary flat
+                     total_cap: candidate-kind collections only
+                       (L1T_PUPPIPart/FullReco_PUPPIPart) -- a secondary flat
                        ceiling on the FLATTENED per-event candidate count,
                        applied after the primary region/flat_topn/none
                        selection (see gather_and_select_puppi_candidates's
@@ -1323,6 +1347,7 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
 
     coll_cfg = _resolve_collections_cfg(cfg)
     want_candidates = coll_cfg["want_candidates"]
+    candidate_collection = coll_cfg["candidate_collection"]
     candidate_cap = coll_cfg["candidate_cap"]
     candidate_object_selection = coll_cfg["candidate_object_selection"]
     candidate_drop_fields = coll_cfg["candidate_drop_fields"]
@@ -1403,11 +1428,11 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                 candidate_object_selection=candidate_object_selection, candidate_drop_fields=candidate_drop_fields,
                 realistic_pid=realistic_pid, candidate_total_cap=candidate_total_cap,
                 other_collections_cfg=other_collections_cfg, event_selection=event_selection,
-                label=label, source_file_idx=source_file_idx)
+                label=label, source_file_idx=source_file_idx, candidate_collection=candidate_collection)
 
             if report_diagnostics:
                 d = diagnose_puppi_selection(arr, selection_pt=candidate_selection_pt, cap=candidate_cap,
-                                              floor_gev=floor_gev)
+                                              floor_gev=floor_gev, prefix=candidate_collection)
                 for k in ("n_events", "out_of_acceptance", "below_floor", "rank_truncated", "kept"):
                     diag_totals[k] += d[k]
                 diag_totals["region_truncated_counts"] += d["region_truncated_counts"]

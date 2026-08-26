@@ -126,7 +126,8 @@ def measure_sample(sample_dir: str, redir: str, dataset_version: str, max_events
                 candidate_drop_fields=coll_cfg["candidate_drop_fields"], realistic_pid=cs_cfg["realistic_pid"],
                 candidate_total_cap=coll_cfg["candidate_total_cap"],
                 other_collections_cfg=coll_cfg["other_collections_cfg"],
-                event_selection=se["event_selection"], label=se["label"], source_file_idx=n_data_files_read - 1)
+                event_selection=se["event_selection"], label=se["label"], source_file_idx=n_data_files_read - 1,
+                candidate_collection=coll_cfg["candidate_collection"])
             n_raw_events += n_events_read
             if record is not None:
                 records.append(record)

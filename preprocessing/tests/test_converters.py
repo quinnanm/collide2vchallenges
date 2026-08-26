@@ -615,7 +615,8 @@ def test_convert_collide2v_regionized_event_selection_drops_samples_failing_cut(
     assert ak.all(ak.num(result["L1T_JetAK4"]["PT"], axis=1) >= 3)
 
 
-def _write_synthetic_puppipart_sample(sample_dir: str, n_files: int, events_per_file: int, seed: int = 0) -> None:
+def _write_synthetic_puppipart_sample(sample_dir: str, n_files: int, events_per_file: int, seed: int = 0,
+                                       prefix: str = "L1T_PUPPIPart") -> None:
     import os as _os
     rng = np.random.default_rng(seed)
     _os.makedirs(sample_dir, exist_ok=True)
@@ -631,13 +632,13 @@ def _write_synthetic_puppipart_sample(sample_dir: str, n_files: int, events_per_
             return [[dtype(value)] * n for n in n_cands]
 
         arr = ak.Array({
-            "L1T_PUPPIPart_PT": pt, "L1T_PUPPIPart_Eta": eta, "L1T_PUPPIPart_Phi": phi,
-            "L1T_PUPPIPart_PID": pid, "L1T_PUPPIPart_Charge": charge,
-            "L1T_PUPPIPart_E": const(1.0), "L1T_PUPPIPart_Mass": const(0.0),
-            "L1T_PUPPIPart_D0": const(0.0), "L1T_PUPPIPart_DZ": const(0.0),
-            "L1T_PUPPIPart_ErrorD0": const(1.0), "L1T_PUPPIPart_ErrorDZ": const(1.0),
-            "L1T_PUPPIPart_IsPU": const(0, int), "L1T_PUPPIPart_IsRecoPU": const(0, int),
-            "L1T_PUPPIPart_PuppiW": const(1.0), "L1T_PUPPIPart_fUniqueID": const(0, int),
+            f"{prefix}_PT": pt, f"{prefix}_Eta": eta, f"{prefix}_Phi": phi,
+            f"{prefix}_PID": pid, f"{prefix}_Charge": charge,
+            f"{prefix}_E": const(1.0), f"{prefix}_Mass": const(0.0),
+            f"{prefix}_D0": const(0.0), f"{prefix}_DZ": const(0.0),
+            f"{prefix}_ErrorD0": const(1.0), f"{prefix}_ErrorDZ": const(1.0),
+            f"{prefix}_IsPU": const(0, int), f"{prefix}_IsRecoPU": const(0, int),
+            f"{prefix}_PuppiW": const(1.0), f"{prefix}_fUniqueID": const(0, int),
         })
         _write_parquet_with_dataset_version(arr, _os.path.join(sample_dir, f"file_{i}.parquet"))
 
@@ -735,5 +736,39 @@ def test_collections_total_cap_only_supported_for_puppipart(tmp_path):
     config_path = tmp_path / "dataconfig.yml"
     config_path.write_text(yaml.dump(config))
     cfg = DataConfig(str(config_path))
-    with pytest.raises(ValueError, match="total_cap is only supported for L1T_PUPPIPart"):
+    with pytest.raises(ValueError, match="total_cap is only supported for a candidate-kind collection"):
         convert_collide2v_regionized(cfg, overwrite=False)
+
+
+def test_convert_collide2v_regionized_fullreco_puppipart_as_candidate_collection(tmp_path):
+    # FullReco_PUPPIPart shares L1T_PUPPIPart's raw fields and registry
+    # "candidate" kind -- region mode + total_cap must work identically,
+    # and the output column must be named FullReco_PUPPIPart, not
+    # L1T_PUPPIPart (a real bug this test guards against: the per-file
+    # record builder used to hardcode the output key name).
+    import yaml
+
+    sample_dir = tmp_path / "eos"
+    out_dir = tmp_path / "out"
+    _write_synthetic_puppipart_sample(str(sample_dir / "TestSample"), n_files=1, events_per_file=10, seed=21,
+                                       prefix="FullReco_PUPPIPart")
+
+    config = {
+        "ds_name": "test_ds",
+        "data_processing": {
+            "sample_dir": str(sample_dir), "redir": "", "out_path": str(out_dir),
+            "dataset_version": "collide2v_v1.0",
+            "collections": {"FullReco_PUPPIPart": {"cap": 18, "total_cap": 3}},
+            "samples": [{"name": "TestSample", "label": 0}],
+        },
+    }
+    config_path = tmp_path / "dataconfig.yml"
+    config_path.write_text(yaml.dump(config))
+    cfg = DataConfig(str(config_path))
+    convert_collide2v_regionized(cfg, overwrite=False)  # must not raise
+
+    out_frag = out_dir / "TestSample" / "TestSample_00000.parquet"
+    result = ak.from_parquet(str(out_frag))
+    assert "FullReco_PUPPIPart" in result.fields
+    assert "L1T_PUPPIPart" not in result.fields
+    assert ak.max(ak.num(result["FullReco_PUPPIPart"]["pt"], axis=1)) <= 3  # total_cap enforced
