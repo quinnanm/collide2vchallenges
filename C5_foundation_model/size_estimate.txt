@@ -1,0 +1,682 @@
+Dataset size estimate for /mnt/collide2vchallenges/C5_foundation_model
+(generated 2026-08-26T03:36:45, from /config/dataconfig.yml)
+
+full dataset total # events: 50,493,062
+train total # events: 45,443,756
+eval total # events: 5,049,306
+
+full dataset size: 303.09 GB
+train size: 272.78 GB
+eval size: 30.31 GB
+
+------------------------------------------------------------------------------
+/mnt/collide2vchallenges/C5_foundation_model/train/DYJetsToLL_13TeV-madgraphMLM-pythia8
+  total # events: 908,000
+  # parquet files: 1
+  approx size per file: 4.88 GB
+  total size: 4.88 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/DYJetsToLL_13TeV-madgraphMLM-pythia8
+  total # events: 100,889
+  # parquet files: 1
+  approx size per file: 555.37 MB
+  total size: 555.37 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/minbias
+  total # events: 908,546
+  # parquet files: 1
+  approx size per file: 4.89 GB
+  total size: 4.89 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/minbias
+  total # events: 100,949
+  # parquet files: 1
+  approx size per file: 556.89 MB
+  total size: 556.89 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/QCD_HT50toInf
+  total # events: 901,513
+  # parquet files: 1
+  approx size per file: 5.19 GB
+  total size: 5.19 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/QCD_HT50toInf
+  total # events: 100,168
+  # parquet files: 1
+  approx size per file: 590.58 MB
+  total size: 590.58 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/QCD_HT50tobb
+  total # events: 905,638
+  # parquet files: 1
+  approx size per file: 5.23 GB
+  total size: 5.23 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/QCD_HT50tobb
+  total # events: 100,626
+  # parquet files: 1
+  approx size per file: 595.43 MB
+  total size: 595.43 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 905,864
+  # parquet files: 1
+  approx size per file: 5.05 GB
+  total size: 5.05 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 100,652
+  # parquet files: 1
+  approx size per file: 574.84 MB
+  total size: 574.84 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 907,818
+  # parquet files: 1
+  approx size per file: 5.11 GB
+  total size: 5.11 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 100,869
+  # parquet files: 1
+  approx size per file: 581.93 MB
+  total size: 581.93 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 907,046
+  # parquet files: 1
+  approx size per file: 5.13 GB
+  total size: 5.13 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 100,783
+  # parquet files: 1
+  approx size per file: 583.95 MB
+  total size: 583.95 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZJetsTobb_13TeV-madgraphMLM-pythia8
+  total # events: 906,818
+  # parquet files: 1
+  approx size per file: 5.15 GB
+  total size: 5.15 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZJetsTobb_13TeV-madgraphMLM-pythia8
+  total # events: 100,758
+  # parquet files: 1
+  approx size per file: 585.58 MB
+  total size: 585.58 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZJetsTocc_13TeV-madgraphMLM-pythia8
+  total # events: 907,455
+  # parquet files: 1
+  approx size per file: 5.15 GB
+  total size: 5.15 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZJetsTocc_13TeV-madgraphMLM-pythia8
+  total # events: 100,828
+  # parquet files: 1
+  approx size per file: 586.45 MB
+  total size: 586.45 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZJetsTovv_13TeV-madgraphMLM-pythia8
+  total # events: 903,001
+  # parquet files: 1
+  approx size per file: 5.11 GB
+  total size: 5.11 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZJetsTovv_13TeV-madgraphMLM-pythia8
+  total # events: 100,333
+  # parquet files: 1
+  approx size per file: 581.15 MB
+  total size: 581.15 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WW_hadronic
+  total # events: 901,568
+  # parquet files: 1
+  approx size per file: 5.61 GB
+  total size: 5.61 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WW_hadronic
+  total # events: 100,174
+  # parquet files: 1
+  approx size per file: 638.60 MB
+  total size: 638.60 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WW_leptonic
+  total # events: 900,742
+  # parquet files: 1
+  approx size per file: 5.41 GB
+  total size: 5.41 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WW_leptonic
+  total # events: 100,082
+  # parquet files: 1
+  approx size per file: 616.02 MB
+  total size: 616.02 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WW_semileptonic
+  total # events: 903,312
+  # parquet files: 1
+  approx size per file: 5.51 GB
+  total size: 5.51 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WW_semileptonic
+  total # events: 100,368
+  # parquet files: 1
+  approx size per file: 627.43 MB
+  total size: 627.43 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WZ_hadronic
+  total # events: 900,137
+  # parquet files: 1
+  approx size per file: 5.43 GB
+  total size: 5.43 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WZ_hadronic
+  total # events: 100,015
+  # parquet files: 1
+  approx size per file: 617.33 MB
+  total size: 617.33 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WZ_leptonic
+  total # events: 905,791
+  # parquet files: 1
+  approx size per file: 5.38 GB
+  total size: 5.38 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WZ_leptonic
+  total # events: 100,643
+  # parquet files: 1
+  approx size per file: 612.09 MB
+  total size: 612.09 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/WZ_semileptonic
+  total # events: 900,864
+  # parquet files: 1
+  approx size per file: 5.35 GB
+  total size: 5.35 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/WZ_semileptonic
+  total # events: 100,096
+  # parquet files: 1
+  approx size per file: 608.72 MB
+  total size: 608.72 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZZ_hadronic
+  total # events: 905,591
+  # parquet files: 1
+  approx size per file: 5.40 GB
+  total size: 5.40 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZZ_hadronic
+  total # events: 100,621
+  # parquet files: 1
+  approx size per file: 614.07 MB
+  total size: 614.07 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZZ_leptonic
+  total # events: 903,591
+  # parquet files: 1
+  approx size per file: 5.34 GB
+  total size: 5.34 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZZ_leptonic
+  total # events: 100,399
+  # parquet files: 1
+  approx size per file: 607.71 MB
+  total size: 607.71 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ZZ_semileptonic
+  total # events: 904,864
+  # parquet files: 1
+  approx size per file: 5.31 GB
+  total size: 5.31 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ZZ_semileptonic
+  total # events: 100,540
+  # parquet files: 1
+  approx size per file: 604.07 MB
+  total size: 604.07 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VVV_incl
+  total # events: 906,984
+  # parquet files: 1
+  approx size per file: 5.65 GB
+  total size: 5.65 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VVV_incl
+  total # events: 100,776
+  # parquet files: 1
+  approx size per file: 643.26 MB
+  total size: 643.26 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/gamma
+  total # events: 903,911
+  # parquet files: 1
+  approx size per file: 5.02 GB
+  total size: 5.02 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/gamma
+  total # events: 100,435
+  # parquet files: 1
+  approx size per file: 571.23 MB
+  total size: 571.23 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/gamma_V
+  total # events: 902,359
+  # parquet files: 1
+  approx size per file: 5.12 GB
+  total size: 5.12 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/gamma_V
+  total # events: 100,262
+  # parquet files: 1
+  approx size per file: 582.36 MB
+  total size: 582.36 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/tri_gamma
+  total # events: 193,536
+  # parquet files: 1
+  approx size per file: 1.10 GB
+  total size: 1.10 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/tri_gamma
+  total # events: 21,504
+  # parquet files: 1
+  approx size per file: 124.61 MB
+  total size: 124.61 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/upsilon_to_leptons
+  total # events: 908,818
+  # parquet files: 1
+  approx size per file: 4.90 GB
+  total size: 4.90 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/upsilon_to_leptons
+  total # events: 100,980
+  # parquet files: 1
+  approx size per file: 557.61 MB
+  total size: 557.61 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 901,430
+  # parquet files: 1
+  approx size per file: 5.87 GB
+  total size: 5.87 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 100,159
+  # parquet files: 1
+  approx size per file: 667.96 MB
+  total size: 667.96 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 908,784
+  # parquet files: 1
+  approx size per file: 5.66 GB
+  total size: 5.66 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 100,976
+  # parquet files: 1
+  approx size per file: 643.43 MB
+  total size: 643.43 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 907,301
+  # parquet files: 1
+  approx size per file: 5.78 GB
+  total size: 5.78 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 100,811
+  # parquet files: 1
+  approx size per file: 657.90 MB
+  total size: 657.90 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/HH_4b
+  total # events: 908,455
+  # parquet files: 1
+  approx size per file: 5.79 GB
+  total size: 5.79 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/HH_4b
+  total # events: 100,939
+  # parquet files: 1
+  approx size per file: 658.88 MB
+  total size: 658.88 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/HH_bbWW
+  total # events: 905,234
+  # parquet files: 1
+  approx size per file: 5.69 GB
+  total size: 5.69 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/HH_bbWW
+  total # events: 100,582
+  # parquet files: 1
+  approx size per file: 647.53 MB
+  total size: 647.53 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/HH_bbZZ
+  total # events: 902,160
+  # parquet files: 1
+  approx size per file: 5.71 GB
+  total size: 5.71 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/HH_bbZZ
+  total # events: 100,240
+  # parquet files: 1
+  approx size per file: 649.53 MB
+  total size: 649.53 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/HH_bbgammagamma
+  total # events: 908,455
+  # parquet files: 1
+  approx size per file: 5.60 GB
+  total size: 5.60 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/HH_bbgammagamma
+  total # events: 100,939
+  # parquet files: 1
+  approx size per file: 637.46 MB
+  total size: 637.46 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/HH_bbtautau
+  total # events: 908,455
+  # parquet files: 1
+  approx size per file: 5.63 GB
+  total size: 5.63 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/HH_bbtautau
+  total # events: 100,939
+  # parquet files: 1
+  approx size per file: 640.42 MB
+  total size: 640.42 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHWW
+  total # events: 900,913
+  # parquet files: 1
+  approx size per file: 5.44 GB
+  total size: 5.44 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHWW
+  total # events: 100,101
+  # parquet files: 1
+  approx size per file: 619.46 MB
+  total size: 619.46 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHZZ
+  total # events: 903,490
+  # parquet files: 1
+  approx size per file: 5.48 GB
+  total size: 5.48 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHZZ
+  total # events: 100,388
+  # parquet files: 1
+  approx size per file: 623.41 MB
+  total size: 623.41 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHbb
+  total # events: 907,393
+  # parquet files: 1
+  approx size per file: 5.52 GB
+  total size: 5.52 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHbb
+  total # events: 100,821
+  # parquet files: 1
+  approx size per file: 627.67 MB
+  total size: 627.67 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHcc
+  total # events: 904,470
+  # parquet files: 1
+  approx size per file: 5.62 GB
+  total size: 5.62 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHcc
+  total # events: 100,497
+  # parquet files: 1
+  approx size per file: 639.06 MB
+  total size: 639.06 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHgammagamma
+  total # events: 905,702
+  # parquet files: 1
+  approx size per file: 5.34 GB
+  total size: 5.34 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHgammagamma
+  total # events: 100,634
+  # parquet files: 1
+  approx size per file: 607.20 MB
+  total size: 607.20 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHgluglu
+  total # events: 902,794
+  # parquet files: 1
+  approx size per file: 5.47 GB
+  total size: 5.47 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHgluglu
+  total # events: 100,310
+  # parquet files: 1
+  approx size per file: 622.42 MB
+  total size: 622.42 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VBFHtautau
+  total # events: 900,264
+  # parquet files: 1
+  approx size per file: 5.58 GB
+  total size: 5.58 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VBFHtautau
+  total # events: 100,029
+  # parquet files: 1
+  approx size per file: 635.31 MB
+  total size: 635.31 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/VH_incl
+  total # events: 903,773
+  # parquet files: 1
+  approx size per file: 5.40 GB
+  total size: 5.40 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/VH_incl
+  total # events: 100,419
+  # parquet files: 1
+  approx size per file: 614.33 MB
+  total size: 614.33 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHWW
+  total # events: 908,227
+  # parquet files: 1
+  approx size per file: 5.33 GB
+  total size: 5.33 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHWW
+  total # events: 100,914
+  # parquet files: 1
+  approx size per file: 606.87 MB
+  total size: 606.87 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHZZ
+  total # events: 907,727
+  # parquet files: 1
+  approx size per file: 5.38 GB
+  total size: 5.38 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHZZ
+  total # events: 100,859
+  # parquet files: 1
+  approx size per file: 612.21 MB
+  total size: 612.21 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHbb
+  total # events: 908,682
+  # parquet files: 1
+  approx size per file: 5.40 GB
+  total size: 5.40 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHbb
+  total # events: 100,965
+  # parquet files: 1
+  approx size per file: 614.80 MB
+  total size: 614.80 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHcc
+  total # events: 907,773
+  # parquet files: 1
+  approx size per file: 5.38 GB
+  total size: 5.38 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHcc
+  total # events: 100,864
+  # parquet files: 1
+  approx size per file: 611.76 MB
+  total size: 611.76 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHgammagamma
+  total # events: 908,046
+  # parquet files: 1
+  approx size per file: 5.25 GB
+  total size: 5.25 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHgammagamma
+  total # events: 100,894
+  # parquet files: 1
+  approx size per file: 597.57 MB
+  total size: 597.57 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHgluglu
+  total # events: 908,364
+  # parquet files: 1
+  approx size per file: 5.38 GB
+  total size: 5.38 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHgluglu
+  total # events: 100,929
+  # parquet files: 1
+  approx size per file: 612.02 MB
+  total size: 612.02 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ggHtautau
+  total # events: 908,182
+  # parquet files: 1
+  approx size per file: 5.35 GB
+  total size: 5.35 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ggHtautau
+  total # events: 100,909
+  # parquet files: 1
+  approx size per file: 608.28 MB
+  total size: 608.28 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ttH_incl
+  total # events: 901,137
+  # parquet files: 1
+  approx size per file: 6.07 GB
+  total size: 6.07 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ttH_incl
+  total # events: 100,126
+  # parquet files: 1
+  approx size per file: 690.63 MB
+  total size: 690.63 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ttW_incl
+  total # events: 900,147
+  # parquet files: 1
+  approx size per file: 5.90 GB
+  total size: 5.90 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ttW_incl
+  total # events: 100,016
+  # parquet files: 1
+  approx size per file: 671.20 MB
+  total size: 671.20 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/ttZ_incl
+  total # events: 902,632
+  # parquet files: 1
+  approx size per file: 6.03 GB
+  total size: 6.03 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/ttZ_incl
+  total # events: 100,292
+  # parquet files: 1
+  approx size per file: 685.66 MB
+  total size: 685.66 MB
+
+/mnt/collide2vchallenges/C5_foundation_model/train/tttt_incl
+  total # events: 900,000
+  # parquet files: 1
+  approx size per file: 6.29 GB
+  total size: 6.29 GB
+
+/mnt/collide2vchallenges/C5_foundation_model/eval/tttt_incl
+  total # events: 100,000
+  # parquet files: 1
+  approx size per file: 716.19 MB
+  total size: 716.19 MB
+
+------------------------------------------------------------------------------
+
+Per-sample measurement basis / warnings:
+  DYJetsToLL_13TeV-madgraphMLM-pythia8: measured 2/2371 files (49/50 version-matched, ~2324 est. total-match count)
+  minbias: measured 2/10500 files (50/50 version-matched, ~10500 est. total-match count)
+  QCD_HT50toInf: measured 2/13126 files (50/50 version-matched, ~13126 est. total-match count)
+  QCD_HT50tobb: measured 2/2888 files (50/50 version-matched, ~2888 est. total-match count)
+  WJetsToLNu_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  WJetsToQQ_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsToQQ_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTobb_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTocc_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  ZJetsTovv_13TeV-madgraphMLM-pythia8: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  WW_hadronic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WW_leptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WW_semileptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  WZ_hadronic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  WZ_leptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  WZ_semileptonic: measured 2/326 files (50/50 version-matched, ~326 est. total-match count)
+  ZZ_hadronic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  ZZ_leptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  ZZ_semileptonic: measured 2/315 files (50/50 version-matched, ~315 est. total-match count)
+  VVV_incl: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  gamma: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  gamma_V: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  tri_gamma: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+    ** target_events NOT ACHIEVABLE -- directory only supports ~215,040, short by ~784,960 **
+  upsilon_to_leptons: measured 2/2625 files (50/50 version-matched, ~2625 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_hadronic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_leptonic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_semiLeptonic: measured 2/2730 files (50/50 version-matched, ~2730 est. total-match count)
+  HH_4b: measured 2/2000 files (50/50 version-matched, ~2000 est. total-match count)
+  HH_bbWW: measured 2/231 files (50/50 version-matched, ~231 est. total-match count)
+  HH_bbZZ: measured 2/231 files (50/50 version-matched, ~231 est. total-match count)
+  HH_bbgammagamma: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  HH_bbtautau: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+  VBFHWW: measured 2/1313 files (50/50 version-matched, ~1313 est. total-match count)
+  VBFHZZ: measured 2/1313 files (50/50 version-matched, ~1313 est. total-match count)
+  VBFHbb: measured 2/1208 files (50/50 version-matched, ~1208 est. total-match count)
+  VBFHcc: measured 2/1418 files (50/50 version-matched, ~1418 est. total-match count)
+  VBFHgammagamma: measured 2/1292 files (50/50 version-matched, ~1292 est. total-match count)
+  VBFHgluglu: measured 2/1155 files (50/50 version-matched, ~1155 est. total-match count)
+  VBFHtautau: measured 2/1365 files (50/50 version-matched, ~1365 est. total-match count)
+  VH_incl: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHWW: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHZZ: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHbb: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHcc: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHgammagamma: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHgluglu: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ggHtautau: measured 2/1050 files (50/50 version-matched, ~1050 est. total-match count)
+  ttH_incl: measured 2/1103 files (50/50 version-matched, ~1103 est. total-match count)
+  ttW_incl: measured 2/578 files (50/50 version-matched, ~578 est. total-match count)
+  ttZ_incl: measured 2/579 files (49/50 version-matched, ~567 est. total-match count)
+  tttt_incl: measured 2/210 files (50/50 version-matched, ~210 est. total-match count)
+
+Note: sizes are extrapolated from a small real-data sample per process -- treat as an estimate,
+not an exact figure. Re-run with --sample-files/--version-scan-limit higher for tighter estimates.
