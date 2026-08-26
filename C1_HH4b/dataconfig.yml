@@ -1,17 +1,11 @@
 # C1: HH -> 4b challenge dataset config.
 # See preprocessing/docs/challenge_dataconfig.md for the full key reference.
 #
-# *** FLAG BEFORE RUNNING: HH_4b's target_events (20,000,000) below is far
-# beyond what EOS actually has for this sample -- docs/eos_dataset_schema.md
-# estimates only ~2.10M HH_4b events exist in the whole dataset (210 files).
-# As written, this job would just consume every available HH_4b file, log a
-# "ran out of files before reaching target_events" warning, and land around
-# ~2.1M events instead of 20M -- it will NOT error, so this would silently
-# under-deliver rather than fail loudly. Confirm the real intended HH_4b
-# count before running (a broader HH-related process, or a much smaller
-# per-signal target, are the likely fixes). Every other sample's target
-# below IS within the real available range (QCD_HT50toInf ~107.6M,
-# WJetsToLNu ~26.2M, each TT sub-sample ~27-30M -- see eos_dataset_schema.md).
+# Sizing: last re-estimated 2026-08-26 against the real EOS directories, for
+# the PREVIOUS sample composition (QCD 20M/HH_4b 20M/WJetsToLNu 10M/TT 10M
+# split 46:44:10) -- see C1_HH4b/size_estimate.txt. Sample list changed since
+# then (HH_4b now uncapped, WJetsToLNu/WJetsToQQ/TT all much smaller) --
+# re-run estimate_output_size.py for a current number before relying on it.
 ds_name: C1_HH4b
 
 data_processing:
@@ -20,79 +14,80 @@ data_processing:
   out_path: "/mnt/collide2vchallenges/C1_HH4b"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
+  # per-sample event selection, target events, and labeling. The label is
+  # used for the supervised classification task (0=background, 1=signal).
   samples:
     - name: QCD_HT50toInf
       label: 0                 # background (matches regionize.SAMPLE_LABELS' existing QCD=0)
       target_events: 20000000
       event_selection:
-        - {collection: L1T_ScalarHT, field: HT, op: '>', value: 240}
+        - {collection: L1T_ScalarHT, field: HT, op: '>', value: 240} #HT>240 cut
     - name: HH_4b
       label: 1                 # signal
-      target_events: 20000000  # *** see flag above -- not achievable against real EOS availability (~2.1M)
+      # No target_events: takes every available file (the true max), rather
+      # than a hardcoded guess -- docs/eos_dataset_schema.md's ~2.10M figure
+      # already turned out stale once (real measurement 2026-08-26: ~2,000
+      # files, ~19.99M achievable), and getting an exact current count would
+      # mean fully reading all ~2,000 files (~1 min/file observed during
+      # sizing -- ~33 hours), not worth it just to hardcode a number that'll
+      # go stale again anyway.
     - name: WJetsToLNu_13TeV-madgraphMLM-pythia8
       label: 3                 # background (matches regionize.SAMPLE_LABELS' existing WJETS=3)
-      target_events: 10000000
-    # TT split 46:44:10 hadronic:semiLeptonic:leptonic by branching ratio --
-    # same split docs/central_dataset_preprocessing.md documents for
-    # collide-1m-ptrawv1.0's own TT composition -- of the 10M TT total.
+      target_events: 30000
+    - name: WJetsToQQ_13TeV-madgraphMLM-pythia8
+      label: 4                 # background -- distinct W+jets decay channel, own label (not merged with WJetsToLNu)
+      target_events: 70000
+    # TT split 50k/40k/10k hadronic:semiLeptonic:leptonic (absolute counts,
+    # not a branching-ratio proportion this time).
     - name: tt0123j_5f_ckm_LO_MLM_hadronic
       label: 2                 # background (matches regionize.SAMPLE_LABELS' existing TT=2)
-      target_events: 4600000
+      target_events: 50000
     - name: tt0123j_5f_ckm_LO_MLM_semiLeptonic
       label: 2
-      target_events: 4400000
+      target_events: 40000
     - name: tt0123j_5f_ckm_LO_MLM_leptonic
       label: 2
-      target_events: 1000000
+      target_events: 10000
 
-  # Every collection gets a raw-pT>1 cut (via object_selection for these 8
-  # object collections; L1T_PUPPIPart's is expressed instead through
-  # candidate_selection.pt/floor_gev below -- see that block's comment) and
-  # excludes generator-level variables: is_pu/is_reco_pu (MC-truth pileup
-  # flags) on L1T_PUPPIPart, Flavor (generator-level parton flavor) on every
-  # jet collection. Per-collection caps below are docs/eos_dataset_schema.md's
-  # own OBSERVED MAXIMUM per-event counts (not this pipeline's separate
-  # AE_OBJ_COLLECTIONS numbers, which are smaller/for a different purpose --
-  # Stage-2 AE input sizing, not this challenge's raw object retention).
-  # L1T_MET/L1T_PUPPIMET/L1T_ScalarHT are fixed-size (1/event) -- cap and
-  # object_selection don't apply to them (see docs/challenge_dataconfig.md).
+  #per collection caps, object selection, and field drops. These are applied
+  #after the per-sample event selection above
   collections:
     L1T_PUPPIPart:
-      cap: 18                # candidates kept PER REGION (region mode, see candidate_selection below)
+      cap: 18                # candidates kept PER REGION 
       total_cap: 500          # secondary ceiling on the flattened per-event total after region selection
       drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
     L1T_Electron:
-      cap: 5                 # observed max, ZZ_leptonic sample (eos_dataset_schema.md)
+      cap: 5                 # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
     L1T_JetAK4:
-      cap: 25                # observed max, QCD_HT50toInf sample
+      cap: 25                # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetAK8:
-      cap: 5                 # observed max, tt0123j...hadronic sample
+      cap: 5                 # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     L1T_MuonTight:
-      cap: 5                 # observed max, ZZ_leptonic sample
+      cap: 5                 # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
     L1T_PhotonTight:
-      cap: 3                 # observed max, tri_gamma sample
+      cap: 3                 # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
     L1T_JetPuppiAK4:
-      cap: 10                # observed max, QCD_HT50toInf sample
+      cap: 10                # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
-      drop_fields: [Flavor]
+      drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetPuppiAK8:
-      cap: 5                 # observed max, tt0123j...hadronic sample
+      cap: 5                 # observed max
       object_selection:
         - {field: PT, op: '>', value: 1}
-      drop_fields: [Flavor]
+      drop_fields: [Flavor]  # generator-level parton flavor -- exclude gen-level variables
     L1T_MET: 1
     L1T_PUPPIMET: 1
     L1T_ScalarHT: 1
