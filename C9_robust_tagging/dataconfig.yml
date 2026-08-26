@@ -1,12 +1,49 @@
 # C9: robust tagging challenge dataset config.
-# STUB -- see preprocessing/docs/challenge_dataconfig.md for the full key
-# reference. Nothing challenge-specific is filled in here yet: a "robust
-# tagging" dataset's process list/event counts/collections (and whatever
-# "robustness" axis the challenge is testing -- different pileup/dataset
-# slices? held-out processes?) is a challenge-design decision, not something
-# to guess at in this stub.
-# NOTE: convert_data.py deliberately errors on an empty `samples:`/
-# `collections:` -- this stub won't run until both are filled in.
+# See preprocessing/docs/challenge_dataconfig.md for the full key reference.
+#
+# Uses FullReco_* collections instead of C1_HH4b/C5_foundation_model's L1T_*
+# ones -- offline/full reconstruction objects rather than L1T-emulated
+# trigger objects. FullReco_* mirrors L1T_* field-for-field (confirmed in
+# docs/eos_dataset_schema.md's "FullReco_* -- offline/full reconstruction"
+# section -- same field names/dtypes per collection), so this is otherwise
+# the same design as C1/C5: region-geometry candidate selection (now on
+# FullReco_PUPPIPart, made possible by generalizing
+# gather_and_select_puppi_candidates's `prefix` parameter -- previously
+# hardcoded to L1T_PUPPIPart only) with the same 500-candidate total_cap,
+# and the same gen-level exclusions (is_pu/is_reco_pu, Flavor).
+#
+# IMPORTANT per-collection cap difference from C1/C5: FullReco is NOT simply
+# "fewer objects than L1T" -- eos_dataset_schema.md's own targeted-sample
+# scan found FullReco_JetAK4 reaching 69 objects/event (vs. L1T_JetAK4's 25),
+# FullReco_MuonTight reaching 6 (vs. 5), while FullReco_PhotonTight is LOWER
+# at 2 (vs. L1T's 3). The caps below are FullReco's own observed maxima (per
+# that same doc section), NOT copied from C1/C5's L1T-based numbers -- using
+# the L1T numbers here would silently truncate real, legitimate high-jet-
+# multiplicity events rather than reflecting an actual observed max.
+#
+# Label: 0=background, 1=signal (binary, per eos_dataset_schema.md's own
+# background/signal split -- same convention as C5_foundation_model, for the
+# same reason: this is a broad multi-process mix, not a single specific
+# supervised task like C1_HH4b). Every process below is classified against
+# that doc's actual Backgrounds/Signals tables (NOT guessed) -- notably
+# ttW_incl/ttZ_incl are SIGNALS there (not backgrounds, despite the "tt"
+# name), and VVV_incl is a BACKGROUND (despite sitting next to the HH/VBF/ggH
+# signal names in the request list).
+#
+# Sample-name interpretation: three groups of repeated bare names in the
+# process list this was requested from (".../bbWW, bbZZ, bbgammagamma,
+# bbtautau" after HH_4b; "HZZ, Hbb, Hcc, Hgammagamma, Hgluglu, Htautau" after
+# VBFHWW; the same six again after ggHWW) don't match any real EOS directory
+# on their own -- read as the HH_bbWW/HH_bbZZ/HH_bbgammagamma/HH_bbtautau,
+# VBFHZZ/VBFHbb/VBFHcc/VBFHgammagamma/VBFHgluglu/VBFHtautau, and
+# ggHZZ/ggHbb/ggHcc/ggHgammagamma/ggHgluglu/ggHtautau series respectively --
+# each reading matches docs/eos_dataset_schema.md's own signal list ordering
+# exactly (HH_4b/HH_bbWW/HH_bbZZ/HH_bbgammagamma/HH_bbtautau, then the
+# 7-item VBFH* series, then the 7-item ggH* series), so this looks like a
+# copy/paste rendering artifact (repeated-prefix lines collapsing) rather
+# than a request for different samples -- flagging this interpretation
+# explicitly since a wrong sample name silently yields 0 usable files rather
+# than erroring.
 ds_name: C9_robust_tagging
 
 data_processing:
@@ -15,12 +52,111 @@ data_processing:
   out_path: "/mnt/collide2vchallenges/C9_robust_tagging"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
-  # TODO: real process list + per-process target_events + explicit labels.
-  samples: []
+  samples:
+    # -- backgrounds (label 0) --
+    - {name: QCD_HT50toInf, label: 0, target_events: 1000000}
+    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 200000}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 200000}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 200000}
+    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
+    - {name: WW_hadronic, label: 0, target_events: 30000}
+    - {name: WW_leptonic, label: 0, target_events: 30000}
+    - {name: WW_semileptonic, label: 0, target_events: 30000}
+    - {name: WZ_hadronic, label: 0, target_events: 30000}
+    - {name: WZ_leptonic, label: 0, target_events: 30000}
+    - {name: WZ_semileptonic, label: 0, target_events: 30000}
+    - {name: ZZ_hadronic, label: 0, target_events: 30000}
+    - {name: ZZ_leptonic, label: 0, target_events: 30000}
+    - {name: ZZ_semileptonic, label: 0, target_events: 30000}
+    - {name: gamma, label: 0, target_events: 200000}
+    - {name: gamma_V, label: 0, target_events: 80000}
+    - {name: upsilon_to_leptons, label: 0, target_events: 200000}
+    - {name: VVV_incl, label: 0, target_events: 20000}
 
-  # TODO: which collections this tagging challenge needs (likely
-  # L1T_JetAK4/JetPuppiAK4 at minimum for a jet-tagging task).
-  collections: {}
+    # -- signals (label 1) --
+    - {name: HH_4b, label: 1, target_events: 20000}
+    - {name: HH_bbWW, label: 1, target_events: 20000}
+    - {name: HH_bbZZ, label: 1, target_events: 20000}
+    - {name: HH_bbgammagamma, label: 1, target_events: 20000}
+    - {name: HH_bbtautau, label: 1, target_events: 20000}
+    - {name: VBFHWW, label: 1, target_events: 100000}
+    - {name: VBFHZZ, label: 1, target_events: 100000}
+    - {name: VBFHbb, label: 1, target_events: 100000}
+    - {name: VBFHcc, label: 1, target_events: 100000}
+    - {name: VBFHgammagamma, label: 1, target_events: 100000}
+    - {name: VBFHgluglu, label: 1, target_events: 100000}
+    - {name: VBFHtautau, label: 1, target_events: 100000}
+    - {name: ggHWW, label: 1, target_events: 100000}
+    - {name: ggHZZ, label: 1, target_events: 100000}
+    - {name: ggHbb, label: 1, target_events: 100000}
+    - {name: ggHcc, label: 1, target_events: 100000}
+    - {name: ggHgammagamma, label: 1, target_events: 100000}
+    - {name: ggHgluglu, label: 1, target_events: 100000}
+    - {name: ggHtautau, label: 1, target_events: 100000}
+    - {name: VH_incl, label: 1, target_events: 100000}
+    - {name: ttW_incl, label: 1, target_events: 50000}
+    - {name: ttZ_incl, label: 1, target_events: 50000}
+    - {name: ttH_incl, label: 1, target_events: 100000}
+    - {name: tttt_incl, label: 1, target_events: 20000}
+
+  # FullReco_* mirrors of C1_HH4b/C5_foundation_model's L1T_* collections.
+  # Caps are FullReco's OWN observed maxima (see header note) -- NOT the same
+  # numbers as the L1T-based configs.
+  collections:
+    FullReco_PUPPIPart:
+      cap: 18                # candidates kept PER REGION (same geometry design as C1/C5)
+      total_cap: 500          # secondary ceiling on the flattened per-event total after region selection
+      drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
+    FullReco_Electron:
+      cap: 5                 # FullReco observed max (eos_dataset_schema.md)
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    FullReco_JetAK4:
+      cap: 69                # FullReco observed max -- higher than L1T_JetAK4's 25
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
+    FullReco_JetAK8:
+      cap: 6                 # FullReco observed max -- higher than L1T_JetAK8's 5
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]
+    FullReco_MuonTight:
+      cap: 6                 # FullReco observed max -- higher than L1T_MuonTight's 5
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    FullReco_PhotonTight:
+      cap: 2                 # FullReco observed max -- LOWER than L1T_PhotonTight's 3 (see header note)
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+    FullReco_JetPuppiAK4:
+      cap: 12                # FullReco observed max -- higher than L1T_JetPuppiAK4's 10
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]
+    FullReco_JetPuppiAK8:
+      cap: 5                 # FullReco observed max, same as L1T_JetPuppiAK8's 5
+      object_selection:
+        - {field: PT, op: '>', value: 1}
+      drop_fields: [Flavor]
+    FullReco_MET: 1
+    FullReco_PUPPIMET: 1
+    FullReco_ScalarHT: 1
+
+  # region-geometry candidate selection -- same design as C1_HH4b/C5, now
+  # driving FullReco_PUPPIPart (collections.FullReco_PUPPIPart above) instead
+  # of L1T_PUPPIPart.
+  candidate_selection:
+    mode: region
+    pt: raw
+    floor_gev: 1.0
+    realistic_pid: true
 
   split:
     train_frac: 0.9
