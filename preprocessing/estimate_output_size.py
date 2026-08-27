@@ -120,14 +120,12 @@ def measure_sample(sample_dir: str, redir: str, dataset_version: str, max_events
             if len(arr) == 0:
                 continue
             record, n_events_read, _, _ = _build_record_for_file(
-                arr, want_candidates=coll_cfg["want_candidates"], candidate_selection_pt=cs_cfg["pt"],
-                candidate_mode=cs_cfg["mode"], candidate_cap=coll_cfg["candidate_cap"],
-                floor_gev=cs_cfg["floor_gev"], candidate_object_selection=coll_cfg["candidate_object_selection"],
-                candidate_drop_fields=coll_cfg["candidate_drop_fields"], realistic_pid=cs_cfg["realistic_pid"],
-                candidate_total_cap=coll_cfg["candidate_total_cap"],
+                arr, candidate_selection_pt=cs_cfg["pt"],
+                candidate_mode=cs_cfg["mode"], floor_gev=cs_cfg["floor_gev"],
+                realistic_pid=cs_cfg["realistic_pid"],
+                candidate_collections_cfg=coll_cfg["candidate_collections_cfg"],
                 other_collections_cfg=coll_cfg["other_collections_cfg"],
-                event_selection=se["event_selection"], label=se["label"], source_file_idx=n_data_files_read - 1,
-                candidate_collection=coll_cfg["candidate_collection"])
+                event_selection=se["event_selection"], label=se["label"], source_file_idx=n_data_files_read - 1)
             n_raw_events += n_events_read
             if record is not None:
                 records.append(record)

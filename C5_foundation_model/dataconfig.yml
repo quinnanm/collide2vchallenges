@@ -40,59 +40,59 @@ data_processing:
   # coverage rather than a specific supervised classification task.
   samples:
     # -- backgrounds (label 0) --
-    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    #- {name: minbias, label: 0, target_events: 1000000}
+    - {name: minbias, label: 0, target_events: 1000000}
     - {name: QCD_HT50toInf, label: 0, target_events: 1000000}
     - {name: QCD_HT50tobb, label: 0, target_events: 1000000}
-    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 1000000}
-    - {name: WW_hadronic, label: 0, target_events: 1000000}
-    - {name: WW_leptonic, label: 0, target_events: 1000000}
-    - {name: WW_semileptonic, label: 0, target_events: 1000000}
-    - {name: WZ_hadronic, label: 0, target_events: 1000000}
-    - {name: WZ_leptonic, label: 0, target_events: 1000000}
-    - {name: WZ_semileptonic, label: 0, target_events: 1000000}
-    - {name: ZZ_hadronic, label: 0, target_events: 1000000}
-    - {name: ZZ_leptonic, label: 0, target_events: 1000000}
-    - {name: ZZ_semileptonic, label: 0, target_events: 1000000}
-    - {name: VVV_incl, label: 0, target_events: 1000000}
-    - {name: gamma, label: 0, target_events: 1000000}
-    - {name: gamma_V, label: 0, target_events: 1000000}
-    - {name: tri_gamma, label: 0, target_events: 1000000}
-    - {name: upsilon_to_leptons, label: 0, target_events: 1000000}
-    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 1000000}
-    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 1000000}
-    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 1000000}
+    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 500000}
+    - {name: WW_hadronic, label: 0, target_events: 500000}
+    - {name: WW_leptonic, label: 0, target_events: 500000}
+    - {name: WW_semileptonic, label: 0, target_events: 500000}
+    - {name: WZ_hadronic, label: 0, target_events: 500000}
+    - {name: WZ_leptonic, label: 0, target_events: 500000}
+    - {name: WZ_semileptonic, label: 0, target_events: 500000}
+    - {name: ZZ_hadronic, label: 0, target_events: 500000}
+    - {name: ZZ_leptonic, label: 0, target_events: 500000}
+    - {name: ZZ_semileptonic, label: 0, target_events: 500000}
+    - {name: gamma, label: 0, target_events: 500000}
+    - {name: gamma_V, label: 0, target_events: 500000}
+    - {name: upsilon_to_leptons, label: 0, target_events: 500000}
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 500000}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 500000}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 500000}
 
     # -- signals (label 1) --
-    - {name: HH_4b, label: 1, target_events: 1000000}
-    - {name: HH_bbWW, label: 1, target_events: 1000000}
-    - {name: HH_bbZZ, label: 1, target_events: 1000000}
-    - {name: HH_bbgammagamma, label: 1, target_events: 1000000}
-    - {name: HH_bbtautau, label: 1, target_events: 1000000}
-    - {name: VBFHWW, label: 1, target_events: 1000000}
-    - {name: VBFHZZ, label: 1, target_events: 1000000}
-    - {name: VBFHbb, label: 1, target_events: 1000000}
-    - {name: VBFHcc, label: 1, target_events: 1000000}
-    - {name: VBFHgammagamma, label: 1, target_events: 1000000}
-    - {name: VBFHgluglu, label: 1, target_events: 1000000}
-    - {name: VBFHtautau, label: 1, target_events: 1000000}
-    - {name: VH_incl, label: 1, target_events: 1000000}
-    - {name: ggHWW, label: 1, target_events: 1000000}
-    - {name: ggHZZ, label: 1, target_events: 1000000}
-    - {name: ggHbb, label: 1, target_events: 1000000}
-    - {name: ggHcc, label: 1, target_events: 1000000}
-    - {name: ggHgammagamma, label: 1, target_events: 1000000}
-    - {name: ggHgluglu, label: 1, target_events: 1000000}
-    - {name: ggHtautau, label: 1, target_events: 1000000}
-    - {name: ttH_incl, label: 1, target_events: 1000000}
-    - {name: ttW_incl, label: 1, target_events: 1000000}
-    - {name: ttZ_incl, label: 1, target_events: 1000000}
-    - {name: tttt_incl, label: 1, target_events: 1000000}
+    - {name: HH_4b, label: 1, target_events: 500000}
+    - {name: HH_bbWW, label: 1, target_events: 500000}
+    - {name: HH_bbZZ, label: 1, target_events: 500000}
+    - {name: HH_bbgammagamma, label: 1, target_events: 500000}
+    - {name: HH_bbtautau, label: 1, target_events: 500000}
+    - {name: VBFHWW, label: 1, target_events: 500000}
+    - {name: VBFHZZ, label: 1, target_events: 500000}
+    - {name: VBFHbb, label: 1, target_events: 500000}
+    - {name: VBFHcc, label: 1, target_events: 500000}
+    - {name: VBFHgammagamma, label: 1, target_events: 500000}
+    - {name: VBFHgluglu, label: 1, target_events: 500000}
+    - {name: VBFHtautau, label: 1, target_events: 500000}
+    - {name: VH_incl, label: 1, target_events: 500000}
+    - {name: ggHWW, label: 1, target_events: 500000}
+    - {name: ggHZZ, label: 1, target_events: 500000}
+    - {name: ggHbb, label: 1, target_events: 500000}
+    - {name: ggHcc, label: 1, target_events: 500000}
+    - {name: ggHgammagamma, label: 1, target_events: 500000}
+    - {name: ggHgluglu, label: 1, target_events: 500000}
+    - {name: ggHtautau, label: 1, target_events: 500000}
+    - {name: ttH_incl, label: 1, target_events: 500000}
+    - {name: ttW_incl, label: 1, target_events: 500000}
+    - {name: ttZ_incl, label: 1, target_events: 500000}
+    - {name: tttt_incl, label: 1, target_events: 500000}
+    - {name: tri_gamma, label: 1, target_events: 500000} #could be background or signal
+    - {name: VVV_incl, label: 1, target_events: 500000} #could be background or signal
 
   #per collection caps, object selection, and field drops. These are applied
   #after the per-sample event selection above
@@ -103,39 +103,27 @@ data_processing:
       drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
     L1T_Electron:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_JetAK4:
       cap: 25                # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetAK8:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     L1T_MuonTight:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_PhotonTight:
       cap: 3                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_JetPuppiAK4:
       cap: 10                # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetPuppiAK8:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]  # generator-level parton flavor -- exclude gen-level variables
     L1T_MET: 1
     L1T_PUPPIMET: 1
     L1T_ScalarHT: 1
+    Event:                  # per-event MC generation metadata -- keep only weight/cross section
+      drop_fields: [Number, ProcessID, CrossSectionError, Scale, AlphaQCD, AlphaQED, ID1, ID2, X1, X2, PDF1, PDF2, ScalePDF]
 
   # region-geometry candidate selection, as requested ("geometry selection").
   # pt: raw + floor_gev: 1.0 together ARE the "raw pt>1"

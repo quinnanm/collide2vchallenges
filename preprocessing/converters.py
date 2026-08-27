@@ -86,10 +86,13 @@ PF_TRUTH_ONLY_FIELDS = {"is_pu", "is_reco_pu"}
 # requests one of those two).
 #
 # kind:
-#   "candidate"       -- L1T_PUPPIPart or FullReco_PUPPIPart (exactly one may
-#                         be requested at a time -- candidate_selection: is a
-#                         single global block, not per-collection).
-#                         Special-cased region/flat_topn selection logic, see
+#   "candidate"       -- L1T_PUPPIPart, FullReco_PUPPIPart, FullReco_PFPart --
+#                         zero or more of these may be requested at once,
+#                         each independently gathered/capped, but they all
+#                         share the SAME candidate_selection: settings (mode/
+#                         pt/floor_gev/realistic_pid -- a single global
+#                         block, not per-collection). Special-cased region/
+#                         flat_topn selection logic, see
 #                         gather_and_select_puppi_candidates.
 #   "fixed_scalar"     -- always fully populated (MET/Rho/ScalarHT-style
 #                         event-level scalars, or Event_* MC metadata); a
@@ -132,15 +135,21 @@ COLLECTION_REGISTRY = {
     "L1T_ScalarHT": {"kind": "fixed_scalar", "fields": ["HT"]},
 
     # FullReco_* mirrors L1T_* field-for-field (see docs/eos_dataset_schema.md).
-    # FullReco_PUPPIPart shares L1T_PUPPIPart's exact raw field set, so it
-    # can use the SAME region-geometry candidate design (candidate_selection:
-    # mode/pt/floor_gev/realistic_pid, collections.<name>.total_cap) when
-    # requested instead of L1T_PUPPIPart -- see gather_and_select_puppi_candidates's
-    # `prefix` parameter. FullReco_PFPart stays a plain variable_object
-    # (mirrors L1T_PFPart's exclusion from the candidate design -- redundant
-    # with unweighted PUPPIPart, not given the special treatment).
+    # FullReco_PUPPIPart/FullReco_PFPart share L1T_PUPPIPart's exact raw
+    # field set, so either (or both at once -- see
+    # gather_and_select_puppi_candidates's `prefix` parameter and
+    # convert_collide2v_regionized's per-candidate-collection loop) can use
+    # the SAME region-geometry candidate design (candidate_selection:
+    # mode/pt/floor_gev/realistic_pid apply identically to every requested
+    # candidate-kind collection -- it's a single global block, not
+    # per-collection; collections.<name>.total_cap IS still per-collection).
+    # L1T_PFPart deliberately does NOT get this treatment (stays
+    # variable_object below) -- only the FullReco_* pair does, since
+    # FullReco_PFPart vs. FullReco_PUPPIPart is a real requested comparison
+    # (confirmed redundant/identical in practice, per README.md), not just
+    # an omission.
     "FullReco_PUPPIPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
-    "FullReco_PFPart": {"kind": "variable_object", "fields": PUPPI_CAND_RAW_FIELDS, "rank_field": "PT"},
+    "FullReco_PFPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
     "FullReco_Electron": {"kind": "variable_object", "fields": _ELECTRON_FIELDS, "rank_field": "PT"},
     "FullReco_MuonTight": {"kind": "variable_object", "fields": _MUON_FIELDS, "rank_field": "PT"},
     "FullReco_PhotonTight": {"kind": "variable_object", "fields": _PHOTON_FIELDS, "rank_field": "PT"},
@@ -235,7 +244,7 @@ def _normalize_collection_entry(entry):
     the common case) or a dict `{cap, object_selection, drop_fields, total_cap}`
     for finer per-collection control. Always returns (cap, object_selection_list,
     drop_fields_set, total_cap). `total_cap` only applies to a candidate-kind
-    collection (L1T_PUPPIPart/FullReco_PUPPIPart -- see
+    collection (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart -- see
     gather_and_select_puppi_candidates) -- validated elsewhere, not here."""
     if entry is None or isinstance(entry, int):
         return entry, [], set(), None
@@ -621,16 +630,20 @@ def gather_and_select_puppi_candidates(arr: ak.Array, selection_pt: str = "weigh
     return ak.zip(fields, depth_limit=1)
 
 
-def _drop_events_with_empty_axis(cands, others: dict, n_events: int, want_candidates: bool) -> tuple:
+def _drop_events_with_empty_axis(cands_by_name: dict, others: dict, n_events: int) -> tuple:
     """Boolean keep-mask (True = keep) over n_events, dropping any event
-    where EITHER axis this dataset is built for ends up with nothing:
-    L1T_PUPPIPart has zero surviving candidates (after region/floor/cap
-    selection), OR every one of the requested variable_object collections is
-    empty -- an event only survives if it has real content on BOTH axes that
-    are actually in play for this run (a challenge that doesn't request
-    L1T_PUPPIPart at all only has the object axis to satisfy; one that
-    requests no variable_object collections at all only has the candidate
-    axis, if requested).
+    where EITHER axis this dataset is built for ends up with nothing: EVERY
+    requested candidate-kind collection has zero surviving candidates (after
+    region/flat_topn/floor/cap selection), OR every one of the requested
+    variable_object collections is empty -- an event only survives if it has
+    real content on BOTH axes that are actually in play for this run (a
+    challenge that requests no candidate-kind collection at all only has the
+    object axis to satisfy; one that requests no variable_object collections
+    at all only has the candidate axis). When MULTIPLE candidate-kind
+    collections are requested at once (e.g. FullReco_PFPart AND
+    FullReco_PUPPIPart), the candidate axis only counts as empty if ALL of
+    them are -- any one having content is enough, mirroring how the object
+    axis already treats its own multiple collections.
 
     With today's default `collections:` (all 7 variable L1T_* collections +
     L1T_PUPPIPart), this reproduces the original hardcoded design exactly --
@@ -638,9 +651,9 @@ def _drop_events_with_empty_axis(cands, others: dict, n_events: int, want_candid
     for the full rationale (real per-sample drop-rate numbers, why a
     zero-candidate or zero-object event is degenerate for axis-2/axis-1 of
     the downstream training tensors) that motivated this filter. Note this
-    check runs on the ALREADY-gathered (post object_selection/cap) `cands`/
-    `others`, so an object_selection cut that empties a collection out
-    naturally triggers this same drop.
+    check runs on the ALREADY-gathered (post object_selection/cap)
+    `cands_by_name`/`others`, so an object_selection cut that empties a
+    collection out naturally triggers this same drop.
     """
     variable_object_names = [name for name in others if COLLECTION_REGISTRY[name]["kind"] == "variable_object"]
     if variable_object_names:
@@ -654,10 +667,12 @@ def _drop_events_with_empty_axis(cands, others: dict, n_events: int, want_candid
     else:
         object_populated = np.ones(n_events, dtype=bool)  # nothing to check on this axis -- don't drop for it
 
-    if want_candidates:
-        pt_field = "pt" if "pt" in cands.fields else cands.fields[0]
-        n_cands = ak.to_numpy(ak.num(cands[pt_field], axis=1))
-        drop = (n_cands == 0) | ~object_populated
+    if cands_by_name:
+        candidate_populated = np.zeros(n_events, dtype=bool)
+        for cands in cands_by_name.values():
+            pt_field = "pt" if "pt" in cands.fields else cands.fields[0]
+            candidate_populated |= ak.to_numpy(ak.num(cands[pt_field], axis=1)) > 0
+        drop = ~candidate_populated | ~object_populated
     else:
         drop = ~object_populated
     return ~drop, int(drop.sum())
@@ -1060,9 +1075,11 @@ def _resolve_candidate_selection_cfg(cfg: DataConfig) -> dict:
 
 def _resolve_collections_cfg(cfg: DataConfig) -> dict:
     """Parse+validate `collections:`. Returns {want_candidates,
-    candidate_collection (the collection name driving the region/flat_topn
-    design -- "L1T_PUPPIPart", "FullReco_PUPPIPart", or None), candidate_cap,
-    candidate_object_selection, candidate_drop_fields, candidate_total_cap,
+    candidate_collections_cfg (name -> (cap, object_selection, drop_fields,
+    total_cap), one entry per requested candidate-kind collection --
+    L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart, zero or more at once;
+    candidate_selection: mode/pt/floor_gev/realistic_pid apply identically to
+    ALL of them -- it's a single global block, not per-collection),
     other_collections_cfg (name -> (cap, object_selection, drop_fields,
     total_cap)), candidate_columns, other_columns (raw column-name lists for
     _read_parquet_tolerant)}."""
@@ -1075,12 +1092,6 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
     if unknown:
         raise ValueError(f"data_processing.collections: unknown collection(s) {unknown} -- see "
                           f"COLLECTION_REGISTRY in converters.py for supported names.")
-    candidate_names = [name for name in collections_cfg_raw if COLLECTION_REGISTRY[name]["kind"] == "candidate"]
-    if len(candidate_names) > 1:
-        raise ValueError(f"data_processing.collections: only one candidate-kind collection (L1T_PUPPIPart or "
-                          f"FullReco_PUPPIPart) can be requested at a time -- candidate_selection: is a single "
-                          f"global block, not per-collection. Got: {candidate_names}")
-    candidate_collection = candidate_names[0] if candidate_names else None
 
     collections_cfg = {}
     for name, entry in collections_cfg_raw.items():
@@ -1088,9 +1099,9 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
         spec = COLLECTION_REGISTRY[name]
         if total_cap is not None and spec["kind"] != "candidate":
             raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for a "
-                              f"candidate-kind collection (L1T_PUPPIPart/FullReco_PUPPIPart -- a secondary "
-                              f"post-selection ceiling on the region-based candidate list) -- every other "
-                              f"collection's own 'cap' is already the final per-event object limit.")
+                              f"candidate-kind collection (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart -- "
+                              f"a secondary post-selection ceiling on the region-based candidate list) -- "
+                              f"every other collection's own 'cap' is already the final per-event object limit.")
         # object_selection always refers to a collection's RAW field names
         # (spec["fields"]) -- true for candidate-kind collections too
         # (PUPPI_CAND_RAW_FIELDS is their registry `fields` entry).
@@ -1104,19 +1115,18 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
             _validate_drop_fields(name, spec, drop_fields)
         collections_cfg[name] = (cap, object_selection, drop_fields, total_cap)
 
-    want_candidates = candidate_collection is not None
-    candidate_cap, candidate_object_selection, candidate_drop_fields, candidate_total_cap = collections_cfg.get(
-        candidate_collection, (CANDIDATES_PER_REGION, [], set(), None))
-    other_collections_cfg = {k: v for k, v in collections_cfg.items() if k != candidate_collection}
+    candidate_collections_cfg = {name: v for name, v in collections_cfg.items()
+                                  if COLLECTION_REGISTRY[name]["kind"] == "candidate"}
+    other_collections_cfg = {name: v for name, v in collections_cfg.items()
+                              if name not in candidate_collections_cfg}
+    want_candidates = bool(candidate_collections_cfg)
 
-    candidate_columns = [f"{candidate_collection}_{f}" for f in PUPPI_CAND_RAW_FIELDS] if want_candidates else []
+    candidate_columns = [f"{name}_{f}" for name in candidate_collections_cfg for f in PUPPI_CAND_RAW_FIELDS]
     other_columns = [f"{name}_{f}" for name in other_collections_cfg for f in COLLECTION_REGISTRY[name]["fields"]]
 
     return {
-        "want_candidates": want_candidates, "candidate_collection": candidate_collection,
-        "candidate_cap": candidate_cap,
-        "candidate_object_selection": candidate_object_selection, "candidate_drop_fields": candidate_drop_fields,
-        "candidate_total_cap": candidate_total_cap, "other_collections_cfg": other_collections_cfg,
+        "want_candidates": want_candidates, "candidate_collections_cfg": candidate_collections_cfg,
+        "other_collections_cfg": other_collections_cfg,
         "candidate_columns": candidate_columns, "other_columns": other_columns,
     }
 
@@ -1154,18 +1164,22 @@ def _discover_sample_files(sample_dir: str, redir: str, sample: str, explicit_fi
     return sorted(os.path.basename(p) for p in glob.glob(os.path.join(sample_dir, sample, "*.parquet")))
 
 
-def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_selection_pt: str,
-                            candidate_mode: str, candidate_cap, floor_gev: float,
-                            candidate_object_selection: list, candidate_drop_fields: set,
-                            realistic_pid: bool, candidate_total_cap, other_collections_cfg: dict,
-                            event_selection: list, label: int, source_file_idx: int,
-                            candidate_collection: str = "L1T_PUPPIPart") -> tuple:
+def _build_record_for_file(arr: ak.Array, *, candidate_selection_pt: str,
+                            candidate_mode: str, floor_gev: float, realistic_pid: bool,
+                            candidate_collections_cfg: dict, other_collections_cfg: dict,
+                            event_selection: list, label: int, source_file_idx: int) -> tuple:
     """Shared core of per-file processing: apply event_selection, gather
     every requested collection, apply the empty-axis filter, and build the
     final `record` (ak.Array, with label/source_file/source_row attached).
     Used by BOTH convert_collide2v_regionized's real per-sample loop and
     estimate_output_size.py's sampling, so the two can never silently drift
     apart in what actually survives to output.
+
+    `candidate_collections_cfg`: name -> (cap, object_selection, drop_fields,
+    total_cap), one entry per requested candidate-kind collection (zero or
+    more -- e.g. FullReco_PFPart and FullReco_PUPPIPart at once).
+    `candidate_selection_pt`/`candidate_mode`/`floor_gev`/`realistic_pid`
+    apply identically to every one of them (a single global block).
 
     Returns (record_or_None, n_events_read, n_selection_dropped, n_axis_dropped)
     -- record is None if every event in this file was dropped.
@@ -1175,16 +1189,13 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
                        if event_selection else np.ones(n_events_read, dtype=bool))
     n_selection_dropped = int((~selection_mask).sum())
 
-    cands = None
-    if want_candidates:
-        cands = gather_and_select_puppi_candidates(arr, selection_pt=candidate_selection_pt,
-                                                    mode=candidate_mode, cap=candidate_cap,
-                                                    floor_gev=floor_gev,
-                                                    object_selection=candidate_object_selection,
-                                                    drop_fields=candidate_drop_fields,
-                                                    realistic_pid=realistic_pid,
-                                                    total_cap=candidate_total_cap,
-                                                    prefix=candidate_collection)
+    cands_by_name = {
+        name: gather_and_select_puppi_candidates(
+            arr, selection_pt=candidate_selection_pt, mode=candidate_mode, cap=cap, floor_gev=floor_gev,
+            object_selection=object_selection, drop_fields=drop_fields, realistic_pid=realistic_pid,
+            total_cap=total_cap, prefix=name)
+        for name, (cap, object_selection, drop_fields, total_cap) in candidate_collections_cfg.items()
+    }
     others = {name: gather_collection(arr, name, COLLECTION_REGISTRY[name], cap, n_events_read,
                                        object_selection=object_selection, drop_fields=drop_fields)
               for name, (cap, object_selection, drop_fields, _total_cap) in other_collections_cfg.items()}
@@ -1194,15 +1205,14 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
     # source_row (below) must stay the ORIGINAL row index into the source
     # file (not a post-drop renumbering), so provenance still resolves
     # correctly.
-    axis_keep_mask, _ = _drop_events_with_empty_axis(cands, others, n_events_read, want_candidates)
+    axis_keep_mask, _ = _drop_events_with_empty_axis(cands_by_name, others, n_events_read)
     keep_mask = selection_mask & axis_keep_mask
     n_axis_dropped = int((selection_mask & ~axis_keep_mask).sum())
 
     source_rows = np.arange(n_events_read)
     n_dropped = n_events_read - int(keep_mask.sum())
     if n_dropped:
-        if cands is not None:
-            cands = cands[keep_mask]
+        cands_by_name = {name: c[keep_mask] for name, c in cands_by_name.items()}
         others = {name: coll[keep_mask] for name, coll in others.items()}
         source_rows = source_rows[keep_mask]
     n_events = len(source_rows)
@@ -1210,8 +1220,7 @@ def _build_record_for_file(arr: ak.Array, *, want_candidates: bool, candidate_se
         return None, n_events_read, n_selection_dropped, n_axis_dropped
 
     record_fields = dict(others)
-    if cands is not None:
-        record_fields[candidate_collection] = cands
+    record_fields.update(cands_by_name)
     record_fields["label"] = ak.values_astype(ak.Array(np.full(n_events, label)), np.int8)
     record_fields["source_file"] = ak.values_astype(ak.Array(np.full(n_events, source_file_idx)), np.int32)
     record_fields["source_row"] = ak.values_astype(ak.Array(source_rows), np.int16)
@@ -1279,10 +1288,12 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                        omit entirely (still read, in case object_selection
                        needs one of them).
                      total_cap: candidate-kind collections only
-                       (L1T_PUPPIPart/FullReco_PUPPIPart) -- a secondary flat
-                       ceiling on the FLATTENED per-event candidate count,
-                       applied after the primary region/flat_topn/none
-                       selection (see gather_and_select_puppi_candidates's
+                       (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart --
+                       zero or more may be requested at once, each with its
+                       own total_cap) -- a secondary flat ceiling on the
+                       FLATTENED per-event candidate count for THAT
+                       collection, applied after the primary region/
+                       flat_topn/none selection (see gather_and_select_puppi_candidates's
                        identical parameter for why this differs from `cap`
                        under mode: region).
                    A capped variable_object collection truncates its
@@ -1291,13 +1302,17 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                    descending; a fixed_scalar collection's cap/object_selection
                    is ignored (drop_fields still applies).
       candidate_selection: optional -- {mode, pt, floor_gev, realistic_pid}.
-                   `pt` ("weighted"/"raw"/"none") falls back to the legacy
-                   top-level `candidate_selection_pt` key, then "weighted",
-                   if omitted -- see gather_and_select_puppi_candidates's
-                   identical `selection_pt` parameter. `mode` ("region"
-                   default, or "flat_topn"), `floor_gev` (default
-                   CANDIDATE_PT_FLOOR_GEV), and `realistic_pid` (default
-                   True) -- see that function's identically-named parameters.
+                   A SINGLE global block applied identically to EVERY
+                   candidate-kind collection requested in `collections:`
+                   (zero, one, or several at once -- e.g. FullReco_PFPart
+                   and FullReco_PUPPIPart together). `pt` ("weighted"/"raw"/
+                   "none") falls back to the legacy top-level
+                   `candidate_selection_pt` key, then "weighted", if omitted
+                   -- see gather_and_select_puppi_candidates's identical
+                   `selection_pt` parameter. `mode` ("region" default, or
+                   "flat_topn"), `floor_gev` (default CANDIDATE_PT_FLOOR_GEV),
+                   and `realistic_pid` (default True) -- see that function's
+                   identically-named parameters.
       split:       optional -- {train_frac, eval_frac, seed}. Omit entirely
                    for the original single-output-per-sample behavior. When
                    set, every event is randomly assigned
@@ -1346,15 +1361,13 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
     report_diagnostics = cs_cfg["report_diagnostics"]
 
     coll_cfg = _resolve_collections_cfg(cfg)
-    want_candidates = coll_cfg["want_candidates"]
-    candidate_collection = coll_cfg["candidate_collection"]
-    candidate_cap = coll_cfg["candidate_cap"]
-    candidate_object_selection = coll_cfg["candidate_object_selection"]
-    candidate_drop_fields = coll_cfg["candidate_drop_fields"]
-    candidate_total_cap = coll_cfg["candidate_total_cap"]
+    candidate_collections_cfg = coll_cfg["candidate_collections_cfg"]
     other_collections_cfg = coll_cfg["other_collections_cfg"]
     candidate_columns = coll_cfg["candidate_columns"]
     other_columns = coll_cfg["other_columns"]
+    if report_diagnostics and len(candidate_collections_cfg) != 1:
+        raise ValueError("data_processing.report_diagnostics requires exactly one candidate-kind "
+                          f"collection in `collections:` -- got {sorted(candidate_collections_cfg)}.")
 
     split_cfg = cfg.dp("split", None)
     train_frac = split_seed = None
@@ -1423,16 +1436,18 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                 continue
 
             record, n_events_read, n_selection_dropped, n_axis_dropped = _build_record_for_file(
-                arr, want_candidates=want_candidates, candidate_selection_pt=candidate_selection_pt,
-                candidate_mode=candidate_mode, candidate_cap=candidate_cap, floor_gev=floor_gev,
-                candidate_object_selection=candidate_object_selection, candidate_drop_fields=candidate_drop_fields,
-                realistic_pid=realistic_pid, candidate_total_cap=candidate_total_cap,
+                arr, candidate_selection_pt=candidate_selection_pt,
+                candidate_mode=candidate_mode, floor_gev=floor_gev,
+                realistic_pid=realistic_pid, candidate_collections_cfg=candidate_collections_cfg,
                 other_collections_cfg=other_collections_cfg, event_selection=event_selection,
-                label=label, source_file_idx=source_file_idx, candidate_collection=candidate_collection)
+                label=label, source_file_idx=source_file_idx)
 
             if report_diagnostics:
-                d = diagnose_puppi_selection(arr, selection_pt=candidate_selection_pt, cap=candidate_cap,
-                                              floor_gev=floor_gev, prefix=candidate_collection)
+                # Validated single-candidate-collection above -- safe to
+                # take the one entry here.
+                (diag_prefix, (diag_cap, _, _, _)), = candidate_collections_cfg.items()
+                d = diagnose_puppi_selection(arr, selection_pt=candidate_selection_pt, cap=diag_cap,
+                                              floor_gev=floor_gev, prefix=diag_prefix)
                 for k in ("n_events", "out_of_acceptance", "below_floor", "rank_truncated", "kept"):
                     diag_totals[k] += d[k]
                 diag_totals["region_truncated_counts"] += d["region_truncated_counts"]

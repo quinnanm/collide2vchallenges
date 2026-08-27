@@ -17,29 +17,27 @@ data_processing:
   # per-sample event selection, target events, and labeling. The label is
   # used for the supervised classification task (0=background, 1=signal).
   samples:
-    - name: QCD_HT50toInf
+    - name: QCD_HT250toInf
       label: 0                 # background
-      target_events: 20000000
-      event_selection:
-        - {collection: L1T_ScalarHT, field: HT, op: '>', value: 240} #HT>240 cut
+      target_events: 1000000
     - name: HH_4b
       label: 1                 # signal
-      # No target_events: takes every available file (the true max)
+      target_events: 10000000
     - name: WJetsToLNu_13TeV-madgraphMLM-pythia8
       label: 3                
-      target_events: 1000000
+      target_events: 2000000
     - name: WJetsToQQ_13TeV-madgraphMLM-pythia8
       label: 3                 
-      target_events: 1000000
+      target_events: 2000000
     - name: tt0123j_5f_ckm_LO_MLM_hadronic
       label: 2                 
-      target_events: 1000000
+      target_events: 2000000
     - name: tt0123j_5f_ckm_LO_MLM_semiLeptonic
       label: 2
-      target_events: 1000000
+      target_events: 2000000
     - name: tt0123j_5f_ckm_LO_MLM_leptonic
       label: 2
-      target_events: 1000000
+      target_events: 2000000
 
   #per collection caps, object selection, and field drops. These are applied
   #after the per-sample event selection above
@@ -50,39 +48,27 @@ data_processing:
       drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
     L1T_Electron:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_JetAK4:
       cap: 25                # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetAK8:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     L1T_MuonTight:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_PhotonTight:
       cap: 3                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     L1T_JetPuppiAK4:
       cap: 10                # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     L1T_JetPuppiAK8:
       cap: 5                 # observed max
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]  # generator-level parton flavor -- exclude gen-level variables
     L1T_MET: 1
     L1T_PUPPIMET: 1
     L1T_ScalarHT: 1
+    Event:                  # per-event MC generation metadata -- keep only weight/cross section
+      drop_fields: [Number, ProcessID, CrossSectionError, Scale, AlphaQCD, AlphaQED, ID1, ID2, X1, X2, PDF1, PDF2, ScalePDF]
 
   # region-geometry candidate selection, as requested ("geometry selection").
   # pt: raw + floor_gev: 1.0 together ARE the "raw pt>1"

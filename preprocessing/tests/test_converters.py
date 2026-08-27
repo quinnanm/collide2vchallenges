@@ -358,7 +358,7 @@ def test_drop_events_with_empty_axis_generalizes_to_requested_collections():
     others = {
         "L1T_JetAK4": ak.Array({"Eta": [[0.1], [], [0.2, 0.3]]}),  # event 1 has zero jets
     }
-    keep_mask, n_dropped = _drop_events_with_empty_axis(None, others, n_events=3, want_candidates=False)
+    keep_mask, n_dropped = _drop_events_with_empty_axis({}, others, n_events=3)
     assert list(keep_mask) == [True, False, True]
     assert n_dropped == 1
 
@@ -366,7 +366,7 @@ def test_drop_events_with_empty_axis_generalizes_to_requested_collections():
 def test_drop_events_with_empty_axis_no_variable_object_collections_drops_nothing():
     # Only a fixed_scalar collection requested (e.g. just L1T_MET) -- no
     # object axis to check at all, so nothing is dropped on that basis.
-    keep_mask, n_dropped = _drop_events_with_empty_axis(None, {}, n_events=3, want_candidates=False)
+    keep_mask, n_dropped = _drop_events_with_empty_axis({}, {}, n_events=3)
     assert list(keep_mask) == [True, True, True]
     assert n_dropped == 0
 
@@ -772,3 +772,61 @@ def test_convert_collide2v_regionized_fullreco_puppipart_as_candidate_collection
     assert "FullReco_PUPPIPart" in result.fields
     assert "L1T_PUPPIPart" not in result.fields
     assert ak.max(ak.num(result["FullReco_PUPPIPart"]["pt"], axis=1)) <= 3  # total_cap enforced
+
+
+def test_convert_collide2v_regionized_multiple_candidate_collections_at_once(tmp_path):
+    # FullReco_PFPart AND FullReco_PUPPIPart both requested at once, sharing
+    # the same global candidate_selection -- both should be gathered
+    # independently (their own cap/object_selection/drop_fields), each under
+    # its own output collection name.
+    import yaml
+
+    sample_dir = tmp_path / "eos"
+    out_dir = tmp_path / "out"
+    _write_synthetic_puppipart_sample(str(sample_dir / "TestSample"), n_files=1, events_per_file=10, seed=31,
+                                       prefix="FullReco_PFPart")
+    # Same file also needs FullReco_PUPPIPart columns -- append them directly.
+    src = str(sample_dir / "TestSample" / "file_0.parquet")
+    existing = ak.from_parquet(src)
+    fields = {f: existing[f] for f in existing.fields}
+    for f in ("PT", "Eta", "Phi", "PID", "Charge", "E", "Mass", "D0", "DZ", "ErrorD0", "ErrorDZ",
+              "IsPU", "IsRecoPU", "PuppiW", "fUniqueID"):
+        fields[f"FullReco_PUPPIPart_{f}"] = existing[f"FullReco_PFPart_{f}"]
+    _write_parquet_with_dataset_version(ak.Array(fields), src)
+
+    config = {
+        "ds_name": "test_ds",
+        "data_processing": {
+            "sample_dir": str(sample_dir), "redir": "", "out_path": str(out_dir),
+            "dataset_version": "collide2v_v1.0",
+            "collections": {
+                "FullReco_PFPart": {"cap": 4, "drop_fields": ["is_pu", "is_reco_pu"]},
+                "FullReco_PUPPIPart": {"cap": 6},
+            },
+            "candidate_selection": {"mode": "flat_topn", "pt": "raw", "floor_gev": 1.0},
+            "samples": [{"name": "TestSample", "label": 0}],
+        },
+    }
+    config_path = tmp_path / "dataconfig.yml"
+    config_path.write_text(yaml.dump(config))
+    cfg = DataConfig(str(config_path))
+    convert_collide2v_regionized(cfg, overwrite=False)  # must not raise
+
+    out_frag = out_dir / "TestSample" / "TestSample_00000.parquet"
+    result = ak.from_parquet(str(out_frag))
+    assert "FullReco_PFPart" in result.fields and "FullReco_PUPPIPart" in result.fields
+    assert "is_pu" not in result["FullReco_PFPart"].fields
+    assert ak.max(ak.num(result["FullReco_PFPart"]["pt"], axis=1)) <= 4
+    assert ak.max(ak.num(result["FullReco_PUPPIPart"]["pt"], axis=1)) <= 6
+
+
+def test_drop_events_with_empty_axis_any_candidate_collection_populated_is_enough():
+    # Two candidate collections requested; event 0 has content only in "A",
+    # event 1 only in "B", event 2 in neither -- only event 2 should drop.
+    cands_by_name = {
+        "A": ak.Array({"pt": [[10.0], [], []]}),
+        "B": ak.Array({"pt": [[], [20.0], []]}),
+    }
+    keep_mask, n_dropped = _drop_events_with_empty_axis(cands_by_name, {}, n_events=3)
+    assert list(keep_mask) == [True, True, False]
+    assert n_dropped == 1

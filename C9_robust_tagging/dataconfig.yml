@@ -5,12 +5,30 @@
 # ones -- offline/full reconstruction objects rather than L1T-emulated
 # trigger objects. FullReco_* mirrors L1T_* field-for-field (confirmed in
 # docs/eos_dataset_schema.md's "FullReco_* -- offline/full reconstruction"
-# section -- same field names/dtypes per collection), so this is otherwise
-# the same design as C1/C5: region-geometry candidate selection (now on
-# FullReco_PUPPIPart, made possible by generalizing
-# gather_and_select_puppi_candidates's `prefix` parameter -- previously
-# hardcoded to L1T_PUPPIPart only) with the same 500-candidate total_cap,
-# and the same gen-level exclusions (is_pu/is_reco_pu, Flavor).
+# section -- same field names/dtypes per collection).
+#
+# UNLIKE C1_HH4b/C5_foundation_model, this config deliberately does NOT use
+# the 90-region PFL1 geometry design -- candidate_selection.mode: flat_topn
+# (see that block below) is a flat raw-pT>=1-floor, top-500-by-pT selection
+# instead. BOTH FullReco_PFPart and FullReco_PUPPIPart are included AND both
+# are driven by that SAME candidate_selection block (mode/pt/floor_gev/
+# realistic_pid apply identically to every requested candidate-kind
+# collection -- COLLECTION_REGISTRY now allows more than one at once,
+# generalized specifically for this config; each still gets its own cap/
+# object_selection/drop_fields from collections: below). This makes PFPart
+# a genuine apples-to-apples duplicate of PUPPIPart's own processing (same
+# selection logic, same realistic_pid collapse, same derived output field
+# names -- pt/eta/phi/pdgId/charge/pt_weighted/... for both, not PFPart's
+# raw TitleCase names from an earlier version of this config) -- useful for
+# the robustness comparison this challenge is testing, given PFPart is
+# otherwise documented as redundant with unweighted PUPPIPart (confirmed
+# identical in a real sample, not just in theory). The
+# candidate_selection.mode: flat_topn generalization (a plain top-N-by-pT
+# list, no region geometry) and the multi-candidate-collection support both
+# started in converters.py's L1T_PUPPIPart-only design; this config was the
+# reason both were generalized (gather_and_select_puppi_candidates's
+# `prefix` parameter, and COLLECTION_REGISTRY allowing several "candidate"-
+# kind collections in one run).
 #
 # IMPORTANT per-collection cap difference from C1/C5: FullReco is NOT simply
 # "fewer objects than L1T" -- eos_dataset_schema.md's own targeted-sample
@@ -54,37 +72,34 @@ data_processing:
 
   samples:
     # -- backgrounds (label 0) --
-    - {name: QCD_HT50toInf, label: 0, target_events: 1000000}
-    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 200000}
-    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 200000}
-    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 200000}
-    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 200000}
-    - {name: WW_hadronic, label: 0, target_events: 30000}
-    - {name: WW_leptonic, label: 0, target_events: 30000}
-    - {name: WW_semileptonic, label: 0, target_events: 30000}
-    - {name: WZ_hadronic, label: 0, target_events: 30000}
-    - {name: WZ_leptonic, label: 0, target_events: 30000}
-    - {name: WZ_semileptonic, label: 0, target_events: 30000}
-    - {name: ZZ_hadronic, label: 0, target_events: 30000}
-    - {name: ZZ_leptonic, label: 0, target_events: 30000}
-    - {name: ZZ_semileptonic, label: 0, target_events: 30000}
-    - {name: gamma, label: 0, target_events: 200000}
-    - {name: gamma_V, label: 0, target_events: 80000}
-    - {name: upsilon_to_leptons, label: 0, target_events: 200000}
-    - {name: VVV_incl, label: 0, target_events: 20000}
+    - {name: minbias, label: 0, target_events: 500000}
+    - {name: QCD_HT50toInf, label: 0, target_events: 500000}
+    - {name: WJetsToLNu_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: DYJetsToLL_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 100000}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 100000}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 100000}
+    - {name: WJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: ZJetsToQQ_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: ZJetsTobb_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: ZJetsTocc_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: ZJetsTovv_13TeV-madgraphMLM-pythia8, label: 0, target_events: 100000}
+    - {name: WW_hadronic, label: 0, target_events: 100000}
+    - {name: WW_leptonic, label: 0, target_events: 100000}
+    - {name: WW_semileptonic, label: 0, target_events: 100000}
+    - {name: ZZ_hadronic, label: 0, target_events: 100000}
+    - {name: ZZ_leptonic, label: 0, target_events: 100000}
+    - {name: ZZ_semileptonic, label: 0, target_events: 100000}
+    - {name: gamma, label: 0, target_events: 100000}
+    - {name: gamma_V, label: 0, target_events: 100000}
+    - {name: upsilon_to_leptons, label: 0, target_events: 100000}
 
     # -- signals (label 1) --
-    - {name: HH_4b, label: 1, target_events: 20000}
-    - {name: HH_bbWW, label: 1, target_events: 20000}
-    - {name: HH_bbZZ, label: 1, target_events: 20000}
-    - {name: HH_bbgammagamma, label: 1, target_events: 20000}
-    - {name: HH_bbtautau, label: 1, target_events: 20000}
+    - {name: HH_4b, label: 1, target_events: 100000}
+    - {name: HH_bbWW, label: 1, target_events: 100000}
+    - {name: HH_bbZZ, label: 1, target_events: 100000}
+    - {name: HH_bbgammagamma, label: 1, target_events: 100000}
+    - {name: HH_bbtautau, label: 1, target_events: 100000}
     - {name: VBFHWW, label: 1, target_events: 100000}
     - {name: VBFHZZ, label: 1, target_events: 100000}
     - {name: VBFHbb, label: 1, target_events: 100000}
@@ -100,60 +115,62 @@ data_processing:
     - {name: ggHgluglu, label: 1, target_events: 100000}
     - {name: ggHtautau, label: 1, target_events: 100000}
     - {name: VH_incl, label: 1, target_events: 100000}
-    - {name: ttW_incl, label: 1, target_events: 50000}
-    - {name: ttZ_incl, label: 1, target_events: 50000}
+    - {name: ttW_incl, label: 1, target_events: 100000}
+    - {name: ttZ_incl, label: 1, target_events: 100000}
     - {name: ttH_incl, label: 1, target_events: 100000}
-    - {name: tttt_incl, label: 1, target_events: 20000}
+    - {name: tttt_incl, label: 1, target_events: 100000}
+    - {name: VVV_incl, label: 0, target_events: 100000}
 
   # FullReco_* mirrors of C1_HH4b/C5_foundation_model's L1T_* collections.
   # Caps are FullReco's OWN observed maxima (see header note) -- NOT the same
   # numbers as the L1T-based configs.
+  #
+  # FullReco_PFPart and FullReco_PUPPIPart are BOTH candidate-kind collections
+  # here, both driven by the SAME candidate_selection block below (mode:
+  # flat_topn/pt/floor_gev/realistic_pid) -- so both get the SAME derived
+  # output field names (pt/eta/phi/pdgId/charge/pt_weighted/puppi_weight/e/
+  # mass/dz/error_dz/is_pu/is_reco_pu/funique_id), not raw TitleCase ones.
+  # Their own object_selection/drop_fields/cap below still apply per-collection.
   collections:
+    FullReco_PFPart:
+      cap: 500                # flat top-500-by-PT/event (candidate_selection.mode: flat_topn below)
+      drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables -- DERIVED output names now
     FullReco_PUPPIPart:
-      cap: 18                # candidates kept PER REGION (same geometry design as C1/C5)
-      total_cap: 500          # secondary ceiling on the flattened per-event total after region selection
+      cap: 500                # flat total candidates/event (candidate_selection.mode: flat_topn below)
       drop_fields: [is_pu, is_reco_pu]   # exclude gen-level (MC-truth) variables
     FullReco_Electron:
       cap: 5                 # FullReco observed max (eos_dataset_schema.md)
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     FullReco_JetAK4:
       cap: 69                # FullReco observed max -- higher than L1T_JetAK4's 25
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]   # generator-level parton flavor -- exclude gen-level variables
     FullReco_JetAK8:
       cap: 6                 # FullReco observed max -- higher than L1T_JetAK8's 5
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     FullReco_MuonTight:
       cap: 6                 # FullReco observed max -- higher than L1T_MuonTight's 5
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     FullReco_PhotonTight:
       cap: 2                 # FullReco observed max -- LOWER than L1T_PhotonTight's 3 (see header note)
-      object_selection:
-        - {field: PT, op: '>', value: 1}
     FullReco_JetPuppiAK4:
       cap: 12                # FullReco observed max -- higher than L1T_JetPuppiAK4's 10
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     FullReco_JetPuppiAK8:
       cap: 5                 # FullReco observed max, same as L1T_JetPuppiAK8's 5
-      object_selection:
-        - {field: PT, op: '>', value: 1}
       drop_fields: [Flavor]
     FullReco_MET: 1
     FullReco_PUPPIMET: 1
     FullReco_ScalarHT: 1
+    Event:                  # per-event MC generation metadata -- keep only weight/cross section
+      drop_fields: [Number, ProcessID, CrossSectionError, Scale, AlphaQCD, AlphaQED, ID1, ID2, X1, X2, PDF1, PDF2, ScalePDF]
 
-  # region-geometry candidate selection -- same design as C1_HH4b/C5, now
-  # driving FullReco_PUPPIPart (collections.FullReco_PUPPIPart above) instead
-  # of L1T_PUPPIPart.
+  # NOT the region-geometry design C1_HH4b/C5 use -- flat_topn drops the
+  # 90-region PFL1 geometry entirely: each candidate collection's own
+  # collections.<name>.cap above is a flat total candidates/event, not a
+  # per-region count. Applies identically to BOTH FullReco_PFPart and
+  # FullReco_PUPPIPart (a single global block, not per-collection) -- pt:
+  # raw + floor_gev: 1.0 is each one's own raw-pT floor (redundant with,
+  # but consistent with, their own explicit object_selection PT cuts above).
   candidate_selection:
-    mode: region
+    mode: flat_topn
     pt: raw
     floor_gev: 1.0
     realistic_pid: true
