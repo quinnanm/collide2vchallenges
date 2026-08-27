@@ -31,7 +31,7 @@ ds_name: C5_foundation_model
 data_processing:
   sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
   redir: "root://eosproject-f.cern.ch/"
-  out_path: "/mnt/collide2vchallenges/C5_foundation_model"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
+  out_path: "/mnt/hackathon-data/C5_foundation_model"   # hackathon-data PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
   # label: 0=background, 1=signal (binary, matching eos_dataset_schema.md's

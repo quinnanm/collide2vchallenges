@@ -11,7 +11,7 @@ ds_name: C1_HH4b
 data_processing:
   sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
   redir: "root://eosproject-f.cern.ch/"
-  out_path: "/mnt/collide2vchallenges/C1_HH4b"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
+  out_path: "/mnt/hackathon-data/C1_HH4b"   # hackathon-data PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
   # per-sample event selection, target events, and labeling. The label is

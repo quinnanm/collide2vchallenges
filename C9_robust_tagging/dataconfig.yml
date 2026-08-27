@@ -67,7 +67,7 @@ ds_name: C9_robust_tagging
 data_processing:
   sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
   redir: "root://eosproject-f.cern.ch/"
-  out_path: "/mnt/collide2vchallenges/C9_robust_tagging"   # collide2vchallenges PVC mount, see fastmlhackathon/nrp/pvc.yaml
+  out_path: "/mnt/hackathon-data/C9_robust_tagging"   # hackathon-data PVC mount, see fastmlhackathon/nrp/pvc.yaml
   dataset_version: collide2v_v1.0
 
   samples:

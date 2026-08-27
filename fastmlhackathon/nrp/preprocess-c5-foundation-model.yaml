@@ -68,7 +68,7 @@ spec:
 
           volumeMounts:
             - name: output-volume
-              mountPath: /mnt/collide2vchallenges   # matches C5_foundation_model/dataconfig.yml's out_path prefix
+              mountPath: /mnt/hackathon-data   # matches C5_foundation_model/dataconfig.yml's out_path prefix
             - name: x509-proxy
               mountPath: /etc/grid-security-ro
               readOnly: true
@@ -79,7 +79,7 @@ spec:
       volumes:
         - name: output-volume
           persistentVolumeClaim:
-            claimName: collide2vchallenges
+            claimName: hackathon-data
         - name: x509-proxy
           secret:
             secretName: x509-proxy-mquinnan-ucsd-edu
