@@ -11,7 +11,12 @@ metadata:
   namespace: fastml26-hackathon
 spec:
   backoffLimit: 0
-  activeDeadlineSeconds: 5400   # TODO: adjust once C1_HH4b/dataconfig.yml's target_events are finalized (still placeholders)
+  # 86400s (24h): the size-estimate job for this exact sample list needed
+  # ~53 min just to read 5 sample files/process (35 files total) over
+  # xrootd -- real conversion reads far more files per sample to hit
+  # target_events (up to 10M for HH_4b), so xrootd I/O, not CPU, dominates
+  # runtime and a short deadline risks killing a mostly-done run for nothing.
+  activeDeadlineSeconds: 86400
   template:
     spec:
       restartPolicy: Never
