@@ -3,3 +3,4 @@ awkward
 pyarrow
 fsspec-xrootd
 PyYAML
+matplotlib
