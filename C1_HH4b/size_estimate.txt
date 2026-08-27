@@ -1,109 +1,109 @@
-Dataset size estimate for /mnt/collide2vchallenges/C1_HH4b
-(generated 2026-08-26T01:29:41, from /config/dataconfig.yml)
+Dataset size estimate for /mnt/hackathon-data/C1_HH4b
+(generated 2026-08-27T19:32:04, from ../C1_HH4b/dataconfig.yml)
 
-full dataset total # events: 40,244,129
-train total # events: 36,219,716
-eval total # events: 4,024,413
+full dataset total # events: 21,028,194
+train total # events: 18,925,375
+eval total # events: 2,102,819
 
-full dataset size: 243.92 GB
-train size: 219.53 GB
-eval size: 24.39 GB
+full dataset size: 130.56 GB
+train size: 117.50 GB
+eval size: 13.06 GB
 
 ------------------------------------------------------------------------------
-/mnt/collide2vchallenges/C1_HH4b/train/QCD_HT50toInf
-  total # events: 18,006,825
-  # parquet files: 10
-  approx size per file: 10.35 GB
-  total size: 103.52 GB
-
-/mnt/collide2vchallenges/C1_HH4b/eval/QCD_HT50toInf
-  total # events: 2,000,758
-  # parquet files: 2
-  approx size per file: 5.75 GB
-  total size: 11.50 GB
-
-/mnt/collide2vchallenges/C1_HH4b/train/HH_4b
-  total # events: 17,990,400
-  # parquet files: 9
-  approx size per file: 12.74 GB
-  total size: 114.67 GB
-
-/mnt/collide2vchallenges/C1_HH4b/eval/HH_4b
-  total # events: 1,998,933
+/mnt/hackathon-data/C1_HH4b/train/QCD_HT250toInf
+  total # events: 900,766
   # parquet files: 1
-  approx size per file: 12.74 GB
-  total size: 12.74 GB
+  approx size per file: 5.51 GB
+  total size: 5.51 GB
 
-/mnt/collide2vchallenges/C1_HH4b/train/WJetsToLNu_13TeV-madgraphMLM-pythia8
-  total # events: 35,867
+/mnt/hackathon-data/C1_HH4b/eval/QCD_HT250toInf
+  total # events: 100,085
   # parquet files: 1
-  approx size per file: 204.90 MB
-  total size: 204.90 MB
+  approx size per file: 627.03 MB
+  total size: 627.03 MB
 
-/mnt/collide2vchallenges/C1_HH4b/eval/WJetsToLNu_13TeV-madgraphMLM-pythia8
-  total # events: 3,985
-  # parquet files: 1
-  approx size per file: 22.77 MB
-  total size: 22.77 MB
+/mnt/hackathon-data/C1_HH4b/train/HH_4b
+  total # events: 9,004,135
+  # parquet files: 5
+  approx size per file: 11.46 GB
+  total size: 57.32 GB
 
-/mnt/collide2vchallenges/C1_HH4b/train/WJetsToQQ_13TeV-madgraphMLM-pythia8
-  total # events: 71,885
+/mnt/hackathon-data/C1_HH4b/eval/HH_4b
+  total # events: 1,000,459
   # parquet files: 1
-  approx size per file: 414.29 MB
-  total size: 414.29 MB
+  approx size per file: 6.37 GB
+  total size: 6.37 GB
 
-/mnt/collide2vchallenges/C1_HH4b/eval/WJetsToQQ_13TeV-madgraphMLM-pythia8
-  total # events: 7,987
+/mnt/hackathon-data/C1_HH4b/train/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 1,802,813
   # parquet files: 1
-  approx size per file: 46.03 MB
-  total size: 46.03 MB
+  approx size per file: 10.04 GB
+  total size: 10.04 GB
 
-/mnt/collide2vchallenges/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_hadronic
-  total # events: 53,006
+/mnt/hackathon-data/C1_HH4b/eval/WJetsToLNu_13TeV-madgraphMLM-pythia8
+  total # events: 200,313
   # parquet files: 1
-  approx size per file: 353.12 MB
-  total size: 353.12 MB
+  approx size per file: 1.12 GB
+  total size: 1.12 GB
 
-/mnt/collide2vchallenges/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_hadronic
-  total # events: 5,890
+/mnt/hackathon-data/C1_HH4b/train/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 1,805,527
   # parquet files: 1
-  approx size per file: 39.24 MB
-  total size: 39.24 MB
+  approx size per file: 10.16 GB
+  total size: 10.16 GB
 
-/mnt/collide2vchallenges/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_semiLeptonic
-  total # events: 44,078
+/mnt/hackathon-data/C1_HH4b/eval/WJetsToQQ_13TeV-madgraphMLM-pythia8
+  total # events: 200,614
   # parquet files: 1
-  approx size per file: 287.93 MB
-  total size: 287.93 MB
+  approx size per file: 1.13 GB
+  total size: 1.13 GB
 
-/mnt/collide2vchallenges/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_semiLeptonic
-  total # events: 4,897
+/mnt/hackathon-data/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 1,802,805
   # parquet files: 1
-  approx size per file: 31.99 MB
-  total size: 31.99 MB
+  approx size per file: 11.72 GB
+  total size: 11.72 GB
 
-/mnt/collide2vchallenges/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_leptonic
-  total # events: 17,656
+/mnt/hackathon-data/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_hadronic
+  total # events: 200,312
   # parquet files: 1
-  approx size per file: 112.51 MB
-  total size: 112.51 MB
+  approx size per file: 1.30 GB
+  total size: 1.30 GB
 
-/mnt/collide2vchallenges/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_leptonic
-  total # events: 1,962
+/mnt/hackathon-data/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 1,808,469
   # parquet files: 1
-  approx size per file: 12.50 MB
-  total size: 12.50 MB
+  approx size per file: 11.53 GB
+  total size: 11.53 GB
+
+/mnt/hackathon-data/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_semiLeptonic
+  total # events: 200,941
+  # parquet files: 1
+  approx size per file: 1.28 GB
+  total size: 1.28 GB
+
+/mnt/hackathon-data/C1_HH4b/train/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 1,800,859
+  # parquet files: 1
+  approx size per file: 11.22 GB
+  total size: 11.22 GB
+
+/mnt/hackathon-data/C1_HH4b/eval/tt0123j_5f_ckm_LO_MLM_leptonic
+  total # events: 200,095
+  # parquet files: 1
+  approx size per file: 1.25 GB
+  total size: 1.25 GB
 
 ------------------------------------------------------------------------------
 
 Per-sample measurement basis / warnings:
-  QCD_HT50toInf: measured 3/13126 files (100/100 version-matched, ~13126 est. total-match count)
-  HH_4b: measured 3/2000 files (100/100 version-matched, ~2000 est. total-match count)
-  WJetsToLNu_13TeV-madgraphMLM-pythia8: measured 3/2625 files (100/100 version-matched, ~2625 est. total-match count)
-  WJetsToQQ_13TeV-madgraphMLM-pythia8: measured 3/2625 files (100/100 version-matched, ~2625 est. total-match count)
-  tt0123j_5f_ckm_LO_MLM_hadronic: measured 3/2730 files (100/100 version-matched, ~2730 est. total-match count)
-  tt0123j_5f_ckm_LO_MLM_semiLeptonic: measured 3/2730 files (100/100 version-matched, ~2730 est. total-match count)
-  tt0123j_5f_ckm_LO_MLM_leptonic: measured 3/2730 files (100/100 version-matched, ~2730 est. total-match count)
+  QCD_HT250toInf: measured 5/2000 files (500/500 version-matched, ~2000 est. total-match count)
+  HH_4b: measured 5/2000 files (500/500 version-matched, ~2000 est. total-match count)
+  WJetsToLNu_13TeV-madgraphMLM-pythia8: measured 5/2625 files (500/500 version-matched, ~2625 est. total-match count)
+  WJetsToQQ_13TeV-madgraphMLM-pythia8: measured 5/2625 files (500/500 version-matched, ~2625 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_hadronic: measured 5/2730 files (500/500 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_semiLeptonic: measured 5/2730 files (500/500 version-matched, ~2730 est. total-match count)
+  tt0123j_5f_ckm_LO_MLM_leptonic: measured 5/2730 files (500/500 version-matched, ~2730 est. total-match count)
 
 Note: sizes are extrapolated from a small real-data sample per process -- treat as an estimate,
 not an exact figure. Re-run with --sample-files/--version-scan-limit higher for tighter estimates.

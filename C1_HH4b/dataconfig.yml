@@ -1,11 +1,12 @@
 # C1: HH -> 4b challenge dataset config.
 # See preprocessing/docs/challenge_dataconfig.md for the full key reference.
 #
-# Sizing: last re-estimated 2026-08-26 against the real EOS directories, for
-# the PREVIOUS sample composition (QCD 20M/HH_4b 20M/WJetsToLNu 10M/TT 10M
-# split 46:44:10) -- see C1_HH4b/size_estimate.txt. Sample list changed since
-# then (HH_4b now uncapped, WJetsToLNu/WJetsToQQ/TT all much smaller) --
-# re-run estimate_output_size.py for a current number before relying on it.
+# Sizing: re-estimated 2026-08-27 against the real EOS directories, for the
+# CURRENT sample composition below -- see C1_HH4b/size_estimate.txt.
+# Total: 130.56 GB (117.50 GB train / 13.06 GB eval), under the ~200GB/
+# challenge budget. QCD_HT250toInf confirmed to exist on EOS in this run
+# (500/500 files version-matched) -- resolves the earlier open question
+# about that sample name.
 ds_name: C1_HH4b
 
 data_processing:
