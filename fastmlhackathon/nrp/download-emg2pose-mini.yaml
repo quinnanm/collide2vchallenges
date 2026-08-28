@@ -1,0 +1,58 @@
+# Kubernetes Job: downloads and unpacks the emg2pose "mini" dataset (600
+# MiB) into hackathon-data/emg2pose/, for the 4th (non-collide2v) hackathon
+# challenge -- github.com/facebookresearch/emg2pose. Unlike the
+# preprocess-*.yaml jobs, this needs no CVMFS/grid-cert/xrootd setup at all
+# -- just a plain HTTPS download (curl) and tar extraction, since emg2pose's
+# data isn't behind EOS/grid auth.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-emg2pose-mini
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: download
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
+              mkdir -p /mnt/hackathon-data/emg2pose
+              cd /mnt/hackathon-data/emg2pose
+
+              echo "=== Downloading emg2pose_dataset_mini.tar (~600 MiB): $(date) ==="
+              curl --fail --retry 3 --retry-delay 5 \
+                "https://fb-ctrl-oss.s3.amazonaws.com/emg2pose/emg2pose_dataset_mini.tar" \
+                -o emg2pose_dataset_mini.tar
+
+              echo "=== Unpacking: $(date) ==="
+              tar -xf emg2pose_dataset_mini.tar
+
+              echo "=== Done -- contents of /mnt/hackathon-data/emg2pose: ==="
+              ls -la /mnt/hackathon-data/emg2pose
+              du -sh /mnt/hackathon-data/emg2pose
+
+              echo "=== Job finished: $(date) ==="
+
+          resources:
+            requests: {memory: "2Gi", cpu: "1"}
+            limits: {memory: "2Gi", cpu: "1"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/hackathon-data
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: hackathon-data
