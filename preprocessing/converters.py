@@ -1248,7 +1248,7 @@ def _build_record_for_file(arr: ak.Array, *, candidate_selection_pt: str,
     return record, n_events_read, n_selection_dropped, n_axis_dropped
 
 
-def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> None:
+def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False, resume: bool = False) -> None:
     """EOS foundational-model-dataset -> per-sample parquet training files.
     See docs/central_dataset_preprocessing.md for the original fixed-recipe
     design (region geometry, candidate selection, dataset_version filtering,
@@ -1364,6 +1364,24 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
     fully-default/no-split case -- the one user-visible behavior change from
     before this config system existed, where a sample always produced
     exactly one file named `<sample>.parquet`.
+
+    `resume`: skip a sample ENTIRELY (no re-discovery, no re-reading, no
+    touching existing output) if its `<sample>_source_files.txt` already
+    exists -- that file is written only as the very last step of a sample
+    that finished successfully (see the end of the per-sample loop below),
+    so its presence is a reliable "this sample is done" signal regardless
+    of how many fragments were flushed along the way. A sample interrupted
+    mid-run (crash, OOM, ...) never gets that file written, so it's treated
+    as incomplete and re-run from scratch on the next attempt -- same as
+    today, via `overwrite`'s existing wipe-and-redo behavior for that one
+    sample (partial fragments from an interrupted run can't be trusted or
+    cheaply resumed mid-sample, e.g. the train/eval split assignment is
+    randomized per event and isn't reproducible file-by-file). Meant for a
+    restart after a real crash (this session hit several -- OOM, a bad
+    remote file) where re-doing every already-completed sample from sample
+    #1 every time wastes real hours; `overwrite=True` alone does that.
+    False by default -- existing behavior (always wipe-and-redo every
+    sample) is unchanged unless a caller opts in.
     """
     sample_dir = cfg.get_sample_dir().rstrip("/")
     redir = cfg.dp("redir", "")
@@ -1406,18 +1424,21 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
         sample, max_files, explicit_files = se["sample"], se["max_files"], se["explicit_files"]
         target_events, label, event_selection = se["target_events"], se["label"], se["event_selection"]
 
+        source_files_path = (out_base / f"{sample}_source_files.txt" if split_cfg
+                              else out_base / sample / f"{sample}_source_files.txt")
+        if resume and source_files_path.exists():
+            logger.info(f"[{sample}] resume: {source_files_path} already exists (sample finished on a prior "
+                        f"run) -- skipping entirely, not touching existing output.")
+            continue
+
         def _resolve_src(fname, sample_path=f"{sample_dir}/{sample}"):
             return join_remote(redir, f"{sample_path}/{fname}") if redir else os.path.join(sample_dir, sample, fname)
 
         candidate_file_names = _discover_sample_files(sample_dir, redir, sample, explicit_files)
         required_columns = list(dict.fromkeys(candidate_columns + _event_selection_columns(event_selection)))
 
-        if split_cfg:
-            split_dirs = {"train": out_base / "train" / sample, "eval": out_base / "eval" / sample}
-            source_files_path = out_base / f"{sample}_source_files.txt"
-        else:
-            split_dirs = {"": out_base / sample}
-            source_files_path = out_base / sample / f"{sample}_source_files.txt"
+        split_dirs = ({"train": out_base / "train" / sample, "eval": out_base / "eval" / sample} if split_cfg
+                       else {"": out_base / sample})
         _prepare_output_dirs(split_dirs, overwrite)
 
         rng = np.random.default_rng(split_seed) if split_cfg else None

@@ -280,3 +280,16 @@ require any change on the consuming side.
 `--overwrite` now applies per fragment directory: without it, any existing
 fragment for that sample/split is a hard error; with it, existing fragments
 for that sample/split are deleted before new ones are written.
+
+`--resume` (combine with `--overwrite`): skip a sample entirely -- no
+re-discovery, no re-reading, existing output untouched -- if it already
+finished on a prior run. A sample's `<sample>_source_files.txt` is written
+only as the very last step of a successful run, so its presence reliably
+means "this sample is done"; a sample interrupted mid-run (crash, OOM, a
+bad remote file, ...) never gets that file written and is wiped and
+reconverted from scratch on the next attempt, same as `--overwrite` alone
+does today. For restarting a long multi-sample run after a real crash
+without re-doing every already-completed sample from the first one again:
+```
+python convert_data.py --config ../C1_HH4b/dataconfig.yml --overwrite --resume
+```

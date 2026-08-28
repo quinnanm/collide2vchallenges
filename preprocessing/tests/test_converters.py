@@ -490,6 +490,57 @@ def test_convert_collide2v_regionized_overwrite_semantics(tmp_path):
     convert_collide2v_regionized(cfg, overwrite=True)  # must not raise
 
 
+def test_convert_collide2v_regionized_resume_skips_completed_sample(tmp_path, monkeypatch):
+    # Regression coverage for the restart-after-crash feature: a sample
+    # whose <sample>_source_files.txt already exists (written only as the
+    # very last step of a successful run -- see convert_collide2v_regionized's
+    # docstring) must be skipped ENTIRELY on a resume run -- not just left
+    # alone on disk, but never re-discovered/re-read either. Proven via
+    # monkeypatch: _discover_sample_files raises if it's ever called for
+    # this sample on the resume run.
+    import os as _os
+    import yaml
+
+    import converters as converters_module
+
+    sample_dir = tmp_path / "eos"
+    out_dir = tmp_path / "out"
+    _write_synthetic_jetak4_sample(str(sample_dir / "TestSample"), n_files=2, events_per_file=20, seed=11)
+
+    config = {
+        "ds_name": "test_ds",
+        "data_processing": {
+            "sample_dir": str(sample_dir), "redir": "", "out_path": str(out_dir),
+            "dataset_version": "collide2v_v1.0",
+            "collections": {"L1T_JetAK4": None},
+            "samples": [{"name": "TestSample", "label": 0}],
+        },
+    }
+    config_path = tmp_path / "dataconfig.yml"
+    config_path.write_text(yaml.dump(config))
+    cfg = DataConfig(str(config_path))
+
+    convert_collide2v_regionized(cfg, overwrite=False)  # completes normally
+    out_frag = out_dir / "TestSample" / "TestSample_00000.parquet"
+    mtime_before = _os.path.getmtime(out_frag)
+    n_events_before = len(ak.from_parquet(str(out_frag)))
+
+    def _boom(*args, **kwargs):
+        raise AssertionError("resume=True should skip this sample before ever calling _discover_sample_files")
+
+    monkeypatch.setattr(converters_module, "_discover_sample_files", _boom)
+
+    convert_collide2v_regionized(cfg, overwrite=True, resume=True)  # must NOT raise -- skipped entirely
+    assert _os.path.getmtime(out_frag) == mtime_before  # untouched, not just re-written identically
+    assert len(ak.from_parquet(str(out_frag))) == n_events_before
+
+    # Without --resume, overwrite=True DOES re-discover (and re-run) the
+    # sample -- confirms the AssertionError above is a real, live check,
+    # not a monkeypatch that silently never gets exercised either way.
+    with pytest.raises(AssertionError):
+        convert_collide2v_regionized(cfg, overwrite=True, resume=False)
+
+
 # --------------------------------------------------------------------------
 # event_selection (per-event, reduce modes) and object_selection/drop_fields/
 # realistic_pid (per-collection) tests.

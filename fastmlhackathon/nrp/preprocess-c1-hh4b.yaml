@@ -56,8 +56,12 @@ spec:
               pip install --quiet -r requirements.txt
 
               echo "=== Starting conversion: $(date) ==="
+              # --resume: safe no-op on a fresh run (no sample has finished
+              # yet), skips any already-completed sample on a restart after
+              # a crash instead of re-doing it from scratch -- see
+              # converters.py's convert_collide2v_regionized docstring.
               python -u convert_data.py \
-                --config ../C1_HH4b/dataconfig.yml --overwrite
+                --config ../C1_HH4b/dataconfig.yml --overwrite --resume
 
               echo "=== Job finished: $(date) ==="
 
