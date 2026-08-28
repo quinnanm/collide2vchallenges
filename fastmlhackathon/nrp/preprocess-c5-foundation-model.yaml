@@ -3,18 +3,18 @@
 # fastml26-hackathon namespace. See preprocess-c1-hh4b.yaml's comments for
 # background on every piece below -- this is the same template, pointed at a
 # different challenge config.
-#
-# NOTE: C5_foundation_model/dataconfig.yml is still a stub (empty samples:/
-# collections:) -- convert_data.py will error immediately until that config
-# is filled in. Don't run this job as-is.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: preprocess-c5-foundation-model
   namespace: fastml26-hackathon
 spec:
-  backoffLimit: 0
-  activeDeadlineSeconds: 5400   # TODO: adjust once C5_foundation_model/dataconfig.yml is filled in
+  # backoffLimit: 1 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
+  # .yaml's identical comments: a real C1 run needed both (one retry
+  # survived a NodeNotReady eviction on a sibling job; xrootd I/O, not CPU,
+  # dominates runtime for 51 samples' worth of target_events).
+  backoffLimit: 1
+  activeDeadlineSeconds: 86400
   template:
     spec:
       restartPolicy: Never
@@ -59,12 +59,11 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # TODO: adjust once target_events is finalized -- a "foundation
-            # model" dataset implies high statistics, likely well beyond
-            # this placeholder (see flush_every_events in the config for how
-            # memory is bounded regardless of total target size).
-            requests: {memory: "32Gi", cpu: "4"}
-            limits: {memory: "32Gi", cpu: "4"}
+            # 40Gi -- see preprocess-c1-hh4b.yaml's identical comment (a real
+            # run OOMed at 32Gi under the old flush_every_events: 2000000;
+            # fixed to 200000 in the dataconfig, this is headroom on top).
+            requests: {memory: "40Gi", cpu: "4"}
+            limits: {memory: "40Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

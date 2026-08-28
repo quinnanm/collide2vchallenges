@@ -3,18 +3,16 @@
 # fastml26-hackathon namespace. See preprocess-c1-hh4b.yaml's comments for
 # background on every piece below -- this is the same template, pointed at a
 # different challenge config.
-#
-# NOTE: C9_robust_tagging/dataconfig.yml is still a stub (empty samples:/
-# collections:) -- convert_data.py will error immediately until that config
-# is filled in. Don't run this job as-is.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: preprocess-c9-robust-tagging
   namespace: fastml26-hackathon
 spec:
-  backoffLimit: 0
-  activeDeadlineSeconds: 5400   # TODO: adjust once C9_robust_tagging/dataconfig.yml is filled in
+  # backoffLimit: 1 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
+  # .yaml's identical comments.
+  backoffLimit: 1
+  activeDeadlineSeconds: 86400
   template:
     spec:
       restartPolicy: Never
@@ -59,9 +57,13 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # TODO: adjust once target_events is finalized
-            requests: {memory: "32Gi", cpu: "4"}
-            limits: {memory: "32Gi", cpu: "4"}
+            # 48Gi -- see preprocess-c1-hh4b.yaml's identical OOM comment;
+            # higher than C1/C5's 40Gi since this buffers TWO 500-cap
+            # candidate collections at once (FullReco_PFPart + PUPPIPart),
+            # matching flush_every_events: 100000 (half of C1/C5's) in the
+            # dataconfig.
+            requests: {memory: "48Gi", cpu: "4"}
+            limits: {memory: "48Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

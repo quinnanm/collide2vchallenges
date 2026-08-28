@@ -10,7 +10,11 @@ metadata:
   name: preprocess-c1-hh4b
   namespace: fastml26-hackathon
 spec:
-  backoffLimit: 0
+  # backoffLimit: 1, not 0 -- a real run of this exact job died to a
+  # NodeNotReady eviction on a different challenge's job (infra flake,
+  # nothing to do with this code); one automatic retry survives that class
+  # of transient failure without silently masking a real, repeating bug.
+  backoffLimit: 1
   # 86400s (24h): the size-estimate job for this exact sample list needed
   # ~53 min just to read 5 sample files/process (35 files total) over
   # xrootd -- real conversion reads far more files per sample to hit
@@ -61,11 +65,13 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # TODO: adjust once target_events is finalized -- see
-            # preprocess_template.yaml's identical comment for sizing
-            # guidance (raw-pT selection needs far more memory than weighted).
-            requests: {memory: "32Gi", cpu: "4"}
-            limits: {memory: "32Gi", cpu: "4"}
+            # 40Gi: a real run OOMed at 32Gi under the old flush_every_events:
+            # 2000000 (see dataconfig.yml's comment -- fixed to 200000, which
+            # should keep any one buffered chunk to a few GB). Kept above the
+            # old limit anyway as headroom for a ~50-flush-cycle run (HH_4b's
+            # 10M target / 200k), not because the fix alone is untrusted.
+            requests: {memory: "40Gi", cpu: "4"}
+            limits: {memory: "40Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

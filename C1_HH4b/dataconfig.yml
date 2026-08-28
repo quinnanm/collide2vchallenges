@@ -86,5 +86,11 @@ data_processing:
     eval_frac: 0.1
     seed: 42
 
-  flush_every_events: 2000000
+  # 200,000, not 2,000,000: QCD_HT250toInf's 1M-event target never hit the
+  # old 2M threshold, so its ENTIRE output sat buffered in memory for the
+  # whole sample (500-candidate/event cap x ~13 fields x a dozen other
+  # collections) -- real conversion OOMed at 32Gi right as HH_4b's much
+  # larger 10M target started piling more onto that. This keeps any single
+  # buffered chunk well under a few GB regardless of a sample's target_events.
+  flush_every_events: 200000
   report_diagnostics: false

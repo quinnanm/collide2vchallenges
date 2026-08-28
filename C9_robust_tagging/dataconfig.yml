@@ -180,5 +180,10 @@ data_processing:
     eval_frac: 0.1
     seed: 42
 
-  flush_every_events: 2000000
+  # 100,000, not 2,000,000 -- see C1_HH4b/dataconfig.yml's identical comment
+  # (a real conversion run OOMed at 32Gi from unflushed buffering). Set even
+  # lower than C1/C5's 200,000 here since this config buffers TWO 500-cap
+  # candidate collections at once (FullReco_PFPart + FullReco_PUPPIPart),
+  # roughly double the per-event memory footprint.
+  flush_every_events: 100000
   report_diagnostics: false

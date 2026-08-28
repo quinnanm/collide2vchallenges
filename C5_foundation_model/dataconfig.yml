@@ -140,5 +140,9 @@ data_processing:
     eval_frac: 0.1
     seed: 42
 
-  flush_every_events: 2000000
+  # 200,000, not 2,000,000 -- see C1_HH4b/dataconfig.yml's identical comment:
+  # a real conversion run OOMed at 32Gi because a sample's whole output can
+  # sit buffered in memory until it's flushed, and most samples here (target
+  # 500K-1M) never reached the old 2M threshold at all.
+  flush_every_events: 200000
   report_diagnostics: false
