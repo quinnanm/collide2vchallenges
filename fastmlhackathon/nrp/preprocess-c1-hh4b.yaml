@@ -66,16 +66,17 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # 64Gi -- bumped from 40Gi after both attempts at 40Gi OOMed
-            # ~300 files / ~1.8M cumulative events into the run (deep past
-            # several flush_every_events: 200000 cycles, so the per-flush
-            # buffer size fix alone wasn't enough -- suspect gradual RSS
-            # growth from awkward/pyarrow/xrootd not fully releasing memory
-            # per file, not a logic bug in this repo's own buffer-clear code).
-            # TODO: if 64Gi still OOMs, this needs real profiling rather than
-            # another blind bump.
-            requests: {memory: "64Gi", cpu: "4"}
-            limits: {memory: "64Gi", cpu: "4"}
+            # 96Gi -- 64Gi (with the malloc_trim fix in converters.py's
+            # _flush_buffer already applied) still OOMed after ~100 min into
+            # HH_4b specifically. A same-fix C9 run over the same window
+            # grew ~4x slower and didn't crash, pointing at HH_4b's own
+            # candidate density (a dense signal sample saturating the
+            # 500-candidate cap) rather than a still-broken fix. Paired with
+            # dataconfig.yml's flush_every_events: 25000 (8x more frequent
+            # flushes -> smaller alloc/free cycles); insurance on top of
+            # that, not a substitute for it.
+            requests: {memory: "96Gi", cpu: "4"}
+            limits: {memory: "96Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

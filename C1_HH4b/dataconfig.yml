@@ -92,5 +92,16 @@ data_processing:
   # collections) -- real conversion OOMed at 32Gi right as HH_4b's much
   # larger 10M target started piling more onto that. This keeps any single
   # buffered chunk well under a few GB regardless of a sample's target_events.
-  flush_every_events: 200000
+  #
+  # Lowered further, 200000 -> 25000: even with the malloc_trim fix in
+  # converters.py's _flush_buffer (real RSS growth from allocator
+  # fragmentation, not a Python reference leak -- see that function's
+  # comment), HH_4b (10M target, a dense multi-jet signal that saturates
+  # the 500-candidate cap far more than QCD/minbias) still OOMed at 64Gi
+  # after ~100 min -- a same-fix C9 run over the same window grew far more
+  # slowly (~0.23 GB/min) and didn't crash, pointing at per-event candidate
+  # density (allocation size/count per flush cycle), not a totally broken
+  # fix. Flushing 8x more often keeps each buffer -- and each fragmentation
+  # -inducing alloc/free cycle -- smaller for this specific sample.
+  flush_every_events: 25000
   report_diagnostics: false
