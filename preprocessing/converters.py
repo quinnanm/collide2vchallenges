@@ -1427,6 +1427,7 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
 
         used_file_names = []
         n_wrong_version = 0
+        n_unreadable = 0
         total_kept_events = 0
         total_empty_axis_dropped = 0
         total_selection_dropped = 0
@@ -1438,7 +1439,15 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                 break
 
             src = _resolve_src(fname)
-            version = _file_dataset_version(src)
+            try:
+                version = _file_dataset_version(src)
+            except OSError as e:
+                if explicit_files is not None:
+                    raise
+                n_unreadable += 1
+                logger.warning(f"[{sample}] {fname}: server error reading file (not this pipeline's bug -- "
+                                f"e.g. a transient/corrupt remote file) -- skipping file. {e}")
+                continue
             if version != dataset_version.encode():
                 if explicit_files is not None:
                     raise ValueError(f"[{sample}] pinned file {fname!r} has dataset_version={version!r} != "
@@ -1448,10 +1457,19 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
                 logger.info(f"[{sample}] {fname}: dataset_version={version!r} != {dataset_version!r} -- skipping file.")
                 continue
 
+            try:
+                arr = _read_parquet_tolerant(src, required_columns, other_columns, max_events_per_file)
+            except OSError as e:
+                if explicit_files is not None:
+                    raise
+                n_unreadable += 1
+                logger.warning(f"[{sample}] {fname}: server error reading file (not this pipeline's bug -- "
+                                f"e.g. a transient/corrupt remote file) -- skipping file. {e}")
+                continue
+
             source_file_idx = len(used_file_names)
             used_file_names.append(fname)
 
-            arr = _read_parquet_tolerant(src, required_columns, other_columns, max_events_per_file)
             if len(arr) == 0:
                 continue
 
@@ -1513,7 +1531,8 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False) -> No
         n_fragments = sum(fragment_idx.values())
         logger.info(f"[{sample}] wrote {total_kept_events} events across {n_fragments} fragment(s), "
                     f"{len(used_file_names)} source files ({n_wrong_version} file(s) skipped for wrong "
-                    f"dataset_version), label={label} -> {list(split_dirs.values())} "
+                    f"dataset_version, {n_unreadable} file(s) skipped for a server/read error), "
+                    f"label={label} -> {list(split_dirs.values())} "
                     f"({total_selection_dropped} dropped by event_selection, {total_empty_axis_dropped} "
                     f"dropped by the empty-axis filter)")
         if report_diagnostics:

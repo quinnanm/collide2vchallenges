@@ -820,6 +820,58 @@ def test_convert_collide2v_regionized_multiple_candidate_collections_at_once(tmp
     assert ak.max(ak.num(result["FullReco_PUPPIPart"]["pt"], axis=1)) <= 6
 
 
+def test_convert_collide2v_regionized_skips_unreadable_file_instead_of_crashing(tmp_path, monkeypatch):
+    # Regression test: a real production run crashed outright on a genuine
+    # xrootd/EOS server error (`OSError: ... [3012] Unable to open file ...
+    # Bad address`) for ONE file mid-sample, losing hours of progress on an
+    # otherwise-healthy job. A single unreadable remote file should be
+    # skipped (like a wrong-dataset_version file already is), not crash the
+    # whole run.
+    import converters as converters_module
+    import yaml
+
+    sample_dir = tmp_path / "eos"
+    out_dir = tmp_path / "out"
+    _write_synthetic_jetak4_sample(str(sample_dir / "TestSample"), n_files=5, events_per_file=20, seed=3)
+
+    real_read = converters_module._read_parquet_tolerant
+
+    def flaky_read(src, *args, **kwargs):
+        if "file_2.parquet" in src:
+            raise OSError("[ERROR] Server responded with an error: [3012] Unable to open file; Bad address")
+        return real_read(src, *args, **kwargs)
+
+    monkeypatch.setattr(converters_module, "_read_parquet_tolerant", flaky_read)
+
+    config = {
+        "ds_name": "test_ds",
+        "data_processing": {
+            "sample_dir": str(sample_dir), "redir": "", "out_path": str(out_dir),
+            "dataset_version": "collide2v_v1.0",
+            "collections": {"L1T_JetAK4": 2},
+            "samples": [{"name": "TestSample", "label": 0, "target_events": 100}],
+        },
+    }
+    config_path = tmp_path / "dataconfig.yml"
+    config_path.write_text(yaml.dump(config))
+    cfg = DataConfig(str(config_path))
+    convert_collide2v_regionized(cfg, overwrite=False)  # must not raise despite the bad file
+
+    out_frag = out_dir / "TestSample" / "TestSample_00000.parquet"
+    result = ak.from_parquet(str(out_frag))
+    # 5 files x 20 events, one skipped -> 80 events, not the 100 target
+    # (unreachable now that one file is unreadable -- this run just logs a
+    # warning rather than raising, matching the wrong-dataset_version path).
+    assert len(result) == 80
+
+    with open(out_dir / "TestSample" / "TestSample_source_files.txt") as fh:
+        source_files = fh.read().splitlines()
+    assert len(source_files) == 4
+    assert "file_2.parquet" not in source_files
+    # source_file indices are contiguous (no gap left for the skipped file)
+    assert set(ak.to_numpy(result["source_file"]).tolist()) == {0, 1, 2, 3}
+
+
 def test_drop_events_with_empty_axis_any_candidate_collection_populated_is_enough():
     # Two candidate collections requested; event 0 has content only in "A",
     # event 1 only in "B", event 2 in neither -- only event 2 should drop.
