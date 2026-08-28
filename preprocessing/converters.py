@@ -15,6 +15,8 @@ so this package has no torch dependency at all: awkward/numpy/pyarrow (via
 fsspec-xrootd) for the actual conversion, PyYAML for config loading. See
 README.md for setup and provenance.
 """
+import ctypes
+import gc
 import glob
 import logging
 import operator
@@ -1019,6 +1021,22 @@ def _prepare_output_dirs(split_dirs: dict, overwrite: bool) -> None:
         d.mkdir(parents=True, exist_ok=True)
 
 
+def _release_freed_memory() -> None:
+    """Force a GC pass, then ask glibc's allocator to actually return freed
+    arenas to the OS (malloc_trim) -- a real long-running conversion job's
+    RSS grew far beyond any logical buffer size over many hours (e.g. a
+    ~6GB theoretical flush-buffer peak vs. ~37GB observed via `kubectl top`),
+    the classic signature of malloc fragmentation from many large numpy/
+    pyarrow allocate/free cycles, not a Python reference leak -- buffers
+    here ARE fully dereferenced each flush (see `buffers[key] = []` below).
+    Silently a no-op on platforms without glibc's malloc_trim (e.g. macOS)."""
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except OSError:
+        pass
+
+
 def _flush_buffer(buffers: dict, buffer_counts: dict, fragment_idx: dict, split_dirs: dict,
                    sample: str, key: str) -> None:
     if not buffers[key]:
@@ -1029,6 +1047,8 @@ def _flush_buffer(buffers: dict, buffer_counts: dict, fragment_idx: dict, split_
     fragment_idx[key] += 1
     buffers[key] = []
     buffer_counts[key] = 0
+    del chunk
+    _release_freed_memory()
 
 
 def _append_and_maybe_flush(buffers: dict, buffer_counts: dict, fragment_idx: dict, split_dirs: dict,
