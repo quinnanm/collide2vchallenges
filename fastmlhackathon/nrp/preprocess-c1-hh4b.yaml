@@ -10,11 +10,12 @@ metadata:
   name: preprocess-c1-hh4b
   namespace: fastml26-hackathon
 spec:
-  # backoffLimit: 1, not 0 -- a real run of this exact job died to a
-  # NodeNotReady eviction on a different challenge's job (infra flake,
-  # nothing to do with this code); one automatic retry survives that class
-  # of transient failure without silently masking a real, repeating bug.
-  backoffLimit: 1
+  # backoffLimit: 3 -- raised from 1 after BOTH attempts at 40Gi OOMed deep
+  # into HH_4b (~300 files/~1.8M cumulative events in, well past several
+  # flush_every_events: 200000 cycles -- see resources: comment below, this
+  # looks like a slow native-level memory leak/fragmentation across many
+  # files, not a buffer-sizing bug in this module's own flush logic).
+  backoffLimit: 3
   # 86400s (24h): the size-estimate job for this exact sample list needed
   # ~53 min just to read 5 sample files/process (35 files total) over
   # xrootd -- real conversion reads far more files per sample to hit
@@ -65,13 +66,16 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # 40Gi: a real run OOMed at 32Gi under the old flush_every_events:
-            # 2000000 (see dataconfig.yml's comment -- fixed to 200000, which
-            # should keep any one buffered chunk to a few GB). Kept above the
-            # old limit anyway as headroom for a ~50-flush-cycle run (HH_4b's
-            # 10M target / 200k), not because the fix alone is untrusted.
-            requests: {memory: "40Gi", cpu: "4"}
-            limits: {memory: "40Gi", cpu: "4"}
+            # 64Gi -- bumped from 40Gi after both attempts at 40Gi OOMed
+            # ~300 files / ~1.8M cumulative events into the run (deep past
+            # several flush_every_events: 200000 cycles, so the per-flush
+            # buffer size fix alone wasn't enough -- suspect gradual RSS
+            # growth from awkward/pyarrow/xrootd not fully releasing memory
+            # per file, not a logic bug in this repo's own buffer-clear code).
+            # TODO: if 64Gi still OOMs, this needs real profiling rather than
+            # another blind bump.
+            requests: {memory: "64Gi", cpu: "4"}
+            limits: {memory: "64Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

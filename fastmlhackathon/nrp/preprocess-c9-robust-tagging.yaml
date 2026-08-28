@@ -9,9 +9,10 @@ metadata:
   name: preprocess-c9-robust-tagging
   namespace: fastml26-hackathon
 spec:
-  # backoffLimit: 1 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
-  # .yaml's identical comments.
-  backoffLimit: 1
+  # backoffLimit: 3 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
+  # .yaml's identical comments (2 straight OOMs on a sibling job's first
+  # attempts, deep into one sample, well past the flush-buffer-size fix).
+  backoffLimit: 3
   activeDeadlineSeconds: 86400
   template:
     spec:
@@ -57,13 +58,13 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # 48Gi -- see preprocess-c1-hh4b.yaml's identical OOM comment;
-            # higher than C1/C5's 40Gi since this buffers TWO 500-cap
+            # 80Gi -- see preprocess-c1-hh4b.yaml's identical OOM comment;
+            # higher than C1/C5's 64Gi since this buffers TWO 500-cap
             # candidate collections at once (FullReco_PFPart + PUPPIPart),
             # matching flush_every_events: 100000 (half of C1/C5's) in the
             # dataconfig.
-            requests: {memory: "48Gi", cpu: "4"}
-            limits: {memory: "48Gi", cpu: "4"}
+            requests: {memory: "80Gi", cpu: "4"}
+            limits: {memory: "80Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume

@@ -9,11 +9,12 @@ metadata:
   name: preprocess-c5-foundation-model
   namespace: fastml26-hackathon
 spec:
-  # backoffLimit: 1 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
-  # .yaml's identical comments: a real C1 run needed both (one retry
-  # survived a NodeNotReady eviction on a sibling job; xrootd I/O, not CPU,
-  # dominates runtime for 51 samples' worth of target_events).
-  backoffLimit: 1
+  # backoffLimit: 3 + activeDeadlineSeconds: 86400 -- see preprocess-c1-hh4b
+  # .yaml's identical comments: a real C1 run OOMed on 2 straight attempts
+  # deep into a large sample (suspected native-level memory growth across
+  # many files, not just buffer sizing), and separately a NodeNotReady
+  # eviction cost a sibling job all its progress with too little retry budget.
+  backoffLimit: 3
   activeDeadlineSeconds: 86400
   template:
     spec:
@@ -59,11 +60,11 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # 40Gi -- see preprocess-c1-hh4b.yaml's identical comment (a real
-            # run OOMed at 32Gi under the old flush_every_events: 2000000;
-            # fixed to 200000 in the dataconfig, this is headroom on top).
-            requests: {memory: "40Gi", cpu: "4"}
-            limits: {memory: "40Gi", cpu: "4"}
+            # 64Gi -- see preprocess-c1-hh4b.yaml's identical comment (2
+            # straight OOMs at 40Gi on a sibling job, deep into one sample,
+            # well past the flush_every_events: 200000 buffer-size fix).
+            requests: {memory: "64Gi", cpu: "4"}
+            limits: {memory: "64Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume
