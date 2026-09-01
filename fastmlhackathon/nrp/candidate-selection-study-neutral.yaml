@@ -1,0 +1,85 @@
+# Kubernetes Job: same as candidate-selection-study.yaml, but restricted to
+# Charge==0 (neutral) candidates only, and a brief (mean/median-only)
+# report -- see candidate_selection_study.py's --neutral-only/--brief flags.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: candidate-selection-study-neutral
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: study
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              if [ -d /cvmfs/grid.cern.ch/etc/grid-security/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates
+                export X509_VOMS_DIR=/cvmfs/grid.cern.ch/etc/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/grid.cern.ch/etc/grid-security/vomses
+              elif [ -d /cvmfs/oasis.opensciencegrid.org/mis/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/oasis.opensciencegrid.org/mis/certificates
+                export X509_VOMS_DIR=/cvmfs/oasis.opensciencegrid.org/mis/vodata/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/oasis.opensciencegrid.org/mis/vodata/vomses
+              else
+                echo "FATAL: no CVMFS grid repo found" >&2
+                exit 1
+              fi
+              export XRD_NETWORKSTACK=IPv4
+
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
+              git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
+              cd /tmp/collide2vchallenges/preprocessing
+              pip install --quiet -r requirements.txt
+
+              echo "=== Starting study (neutral-only, brief): $(date) ==="
+              python -u candidate_selection_study.py \
+                --neutral-only --brief \
+                --report-path candidate_selection_study_neutral.txt \
+                --npz-path candidate_selection_study_neutral.npz
+
+              mkdir -p /mnt/hackathon-data/studies
+              cp candidate_selection_study_neutral.txt candidate_selection_study_neutral.npz /mnt/hackathon-data/studies/
+              echo "=== Report copied to PVC ==="
+              cat candidate_selection_study_neutral.txt
+              echo "=== Job finished: $(date) ==="
+
+          env:
+            - name: X509_USER_PROXY
+              value: /etc/grid-security-ro/x509up
+
+          resources:
+            requests: {memory: "8Gi", cpu: "2"}
+            limits: {memory: "8Gi", cpu: "2"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/hackathon-data
+            - name: x509-proxy
+              mountPath: /etc/grid-security-ro
+              readOnly: true
+            - name: cvmfs
+              mountPath: /cvmfs
+              mountPropagation: HostToContainer
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: hackathon-data
+        - name: x509-proxy
+          secret:
+            secretName: x509-proxy-mquinnan-ucsd-edu
+            defaultMode: 0400
+        - name: cvmfs
+          persistentVolumeClaim:
+            claimName: cvmfs
