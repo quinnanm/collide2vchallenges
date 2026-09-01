@@ -47,6 +47,7 @@ DEFAULT_REDIR = "root://eosproject-f.cern.ch/"
 DEFAULT_DATASET_VERSION = "collide2v_v1.0"
 
 ETA_CUT = [{"field": "Eta", "op": ">=", "value": -3.0}, {"field": "Eta", "op": "<=", "value": 3.0}]
+NEUTRAL_CUT = [{"field": "Charge", "op": "==", "value": 0}]
 # The output pt/pt_weighted fields gather_and_select_puppi_candidates returns
 # are float16-downcast for storage (selection itself runs at float64) -- a
 # candidate that passed at, say, pt_weighted=1.0000001 can round to slightly
@@ -96,15 +97,22 @@ def ncands_stats(ncands: np.ndarray) -> dict:
     }
 
 
-def run_one_process(src: str) -> dict:
+def run_one_process(src: str, neutral_only: bool = False) -> dict:
     raw_columns = [f"L1T_PUPPIPart_{f}" for f in PUPPI_CAND_RAW_FIELDS]
     arr = ak.from_parquet(src, columns=raw_columns)
 
+    # neutral_only restricts the CANDIDATE POOL to Charge==0 before the
+    # region/floor selection runs (object_selection is applied before
+    # ranking/capping -- see gather_and_select_puppi_candidates's docstring),
+    # so neutrals compete only against other neutrals for each region's 18
+    # slots -- not "select from everyone, then filter to neutral survivors".
+    object_selection = ETA_CUT + NEUTRAL_CUT if neutral_only else ETA_CUT
+
     puppi = gather_and_select_puppi_candidates(
-        arr, selection_pt="weighted", mode="region", cap=18, floor_gev=1.0, object_selection=ETA_CUT,
+        arr, selection_pt="weighted", mode="region", cap=18, floor_gev=1.0, object_selection=object_selection,
     )
     raw = gather_and_select_puppi_candidates(
-        arr, selection_pt="raw", mode="region", cap=18, floor_gev=1.0, object_selection=ETA_CUT,
+        arr, selection_pt="raw", mode="region", cap=18, floor_gev=1.0, object_selection=object_selection,
     )
 
     puppi_ncands = ak.to_numpy(ak.num(puppi["pt"], axis=1))
@@ -128,18 +136,23 @@ def run_one_process(src: str) -> dict:
     }
 
 
-def build_report(results: dict) -> str:
-    header = (
-        f"{'process':<45} {'n_ev':>6} | "
-        f"{'puppi mean':>10} {'median':>7} {'p25':>6} {'p75':>6} {'min':>4} {'max':>4} {'viol':>5} | "
-        f"{'raw mean':>9} {'median':>7} {'p25':>6} {'p75':>6} {'min':>4} {'max':>4} {'viol':>5}"
-    )
+def build_report(results: dict, brief: bool = False, neutral_only: bool = False) -> str:
+    if brief:
+        header = f"{'process':<45} {'n_ev':>6} | {'puppi mean':>10} {'median':>7} | {'raw mean':>9} {'median':>7}"
+    else:
+        header = (
+            f"{'process':<45} {'n_ev':>6} | "
+            f"{'puppi mean':>10} {'median':>7} {'p25':>6} {'p75':>6} {'min':>4} {'max':>4} {'viol':>5} | "
+            f"{'raw mean':>9} {'median':>7} {'p25':>6} {'p75':>6} {'min':>4} {'max':>4} {'viol':>5}"
+        )
     lines = [
-        "Candidate-selection study: L1T_PUPPIPart, region geometry, cap=18/region, |eta|<=3, floor=1 GeV",
+        "Candidate-selection study: L1T_PUPPIPart, region geometry, cap=18/region, |eta|<=3, floor=1 GeV"
+        + (", Charge==0 (neutral) candidates only" if neutral_only else ""),
         "  puppi cut: floor/rank driven by PuppiW*pt (weighted pT)",
         "  raw cut:   floor/rank driven by raw pT",
-        "1 file/process, real EOS data. 'viol' = surviving candidates that actually violate their own",
-        "cut (PuppiW<=0 or puppi_pt<1 for puppi; raw_pt<1 for raw) -- should be 0 for both, every row.",
+        "1 file/process, real EOS data."
+        + ("" if brief else " 'viol' = surviving candidates that actually violate their own cut "
+                             "(PuppiW<=0 or puppi_pt<1 for puppi; raw_pt<1 for raw) -- should be 0, every row."),
         "",
         header,
         "-" * len(header),
@@ -149,13 +162,20 @@ def build_report(results: dict) -> str:
             lines.append(f"{name:<45}  ** no version-matched file found -- skipped **")
             continue
         p, w = r["puppi"], r["raw"]
-        lines.append(
-            f"{name:<45} {r['n_events_in_file']:>6} | "
-            f"{p['mean']:>10.2f} {p['median']:>7.1f} {p['p25']:>6.1f} {p['p75']:>6.1f} "
-            f"{p['min']:>4} {p['max']:>4} {r['puppi_violations']:>5} | "
-            f"{w['mean']:>9.2f} {w['median']:>7.1f} {w['p25']:>6.1f} {w['p75']:>6.1f} "
-            f"{w['min']:>4} {w['max']:>4} {r['raw_violations']:>5}"
-        )
+        if brief:
+            lines.append(
+                f"{name:<45} {r['n_events_in_file']:>6} | "
+                f"{p['mean']:>10.2f} {p['median']:>7.1f} | "
+                f"{w['mean']:>9.2f} {w['median']:>7.1f}"
+            )
+        else:
+            lines.append(
+                f"{name:<45} {r['n_events_in_file']:>6} | "
+                f"{p['mean']:>10.2f} {p['median']:>7.1f} {p['p25']:>6.1f} {p['p75']:>6.1f} "
+                f"{p['min']:>4} {p['max']:>4} {r['puppi_violations']:>5} | "
+                f"{w['mean']:>9.2f} {w['median']:>7.1f} {w['p25']:>6.1f} {w['p75']:>6.1f} "
+                f"{w['min']:>4} {w['max']:>4} {r['raw_violations']:>5}"
+            )
     return "\n".join(lines) + "\n"
 
 
@@ -170,6 +190,12 @@ if __name__ == "__main__":
     parser.add_argument("--report-path", default="candidate_selection_study.txt")
     parser.add_argument("--npz-path", default="candidate_selection_study.npz",
                          help="Per-process, per-cut raw ncands-per-event arrays, for follow-up plotting.")
+    parser.add_argument("--neutral-only", action="store_true",
+                         help="Restrict the candidate pool to Charge==0 before selection (neutrals compete "
+                              "only against other neutrals for each region's cap -- see run_one_process).")
+    parser.add_argument("--brief", action="store_true",
+                         help="Report just mean/median per process (drop p25/p75/min/max/viol columns). "
+                              "Violations are still checked and logged as warnings if any are found.")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -194,18 +220,21 @@ if __name__ == "__main__":
             continue
         logger.info(f"{proc}: measuring {src}")
         try:
-            r = run_one_process(src)
+            r = run_one_process(src, neutral_only=args.neutral_only)
         except Exception as e:
             logger.warning(f"{proc}: failed to process {src} -- skipping. {e}")
             results[proc] = None
             continue
+        if r["puppi_violations"] or r["raw_violations"]:
+            logger.warning(f"{proc}: {r['puppi_violations']} puppi / {r['raw_violations']} raw violation(s) "
+                            f"found -- selection logic may not be airtight for this process.")
         npz_arrays[f"{proc}__puppi_ncands"] = r.pop("puppi_ncands_raw_array")
         npz_arrays[f"{proc}__raw_ncands"] = r.pop("raw_ncands_raw_array")
         results[proc] = r
         logger.info(f"{proc}: puppi mean={r['puppi']['mean']:.2f} median={r['puppi']['median']:.1f}  "
                     f"raw mean={r['raw']['mean']:.2f} median={r['raw']['median']:.1f}")
 
-    report = build_report(results)
+    report = build_report(results, brief=args.brief, neutral_only=args.neutral_only)
     with open(args.report_path, "w") as fh:
         fh.write(report)
     logger.info(f"Wrote report to {args.report_path}")
