@@ -1,0 +1,75 @@
+# Kubernetes Job: runs preprocessing/plot_jet_multiplicity.py against the
+# raw AK4 jet collections produced by preprocess-raw-jets-minbias.yaml and
+# preprocess-raw-jets-ttbar-inclusive.yaml. No CVMFS/grid-cert needed (data
+# already on temp-data). Produces 4 PNGs (linear-x + log-x for each of the
+# two datasets) in one pod. No GPU.
+#
+# ttbar-inclusive mixes the three final states in exact branching-ratio
+# proportions via --max-events (4570/4380/1050 = 45.70%/43.80%/10.50%) --
+# see raw_jets_ttbar_inclusive.yaml's comment.
+#
+# Bare Pods are capped at 32GB RAM by an NRP admission webhook -- this is a
+# Job, not subject to that cap. Jets are much lower-volume per event than
+# raw candidates (few-to-tens vs thousands), so 32Gi is generous headroom
+# here, not a tightly-reasoned number like the candidate jobs' 64Gi.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: plot-jet-multiplicity-minbias-ttbar-inclusive
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: plotter
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
+              git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
+              cd /tmp/collide2vchallenges/preprocessing
+              pip install --quiet awkward pyarrow matplotlib numpy
+
+              echo "=== Plotting minbias jets: $(date) ==="
+              python -u plot_jet_multiplicity.py \
+                --data-dir /mnt/temp-data/raw_jets_minbias/minbias \
+                --max-events 10000 \
+                --out-path-prefix /mnt/temp-data/raw_jets_minbias/jet_multiplicity_minbias \
+                --title "minbias (10k events): AK4 jet multiplicity (raw, uncapped)"
+
+              echo "=== Plotting inclusive ttbar jets (BR-weighted): $(date) ==="
+              python -u plot_jet_multiplicity.py \
+                --data-dir \
+                  /mnt/temp-data/raw_jets_ttbar_inclusive/tt0123j_5f_ckm_LO_MLM_hadronic \
+                  /mnt/temp-data/raw_jets_ttbar_inclusive/tt0123j_5f_ckm_LO_MLM_semiLeptonic \
+                  /mnt/temp-data/raw_jets_ttbar_inclusive/tt0123j_5f_ckm_LO_MLM_leptonic \
+                --max-events 4570 4380 1050 \
+                --out-path-prefix /mnt/temp-data/raw_jets_ttbar_inclusive/jet_multiplicity_ttbar_inclusive \
+                --title "inclusive ttbar (10k events, BR-weighted): AK4 jet multiplicity (raw, uncapped)"
+
+              echo "=== Output PNGs: ==="
+              find /mnt/temp-data/raw_jets_minbias /mnt/temp-data/raw_jets_ttbar_inclusive -name "*.png"
+
+              echo "=== Job finished: $(date) ==="
+
+          resources:
+            requests: {memory: "32Gi", cpu: "2"}
+            limits: {memory: "32Gi", cpu: "2"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/temp-data
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: temp-data

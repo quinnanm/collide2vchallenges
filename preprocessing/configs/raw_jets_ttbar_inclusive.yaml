@@ -1,0 +1,35 @@
+# One-off study config: ~10k "inclusive ttbar" events (all three final
+# states, mixed in real ttbar branching-ratio proportions -- see
+# raw_candidates_ttbar_inclusive.yaml for the BR derivation:
+# 45.70%/43.80%/10.50% hadronic/semileptonic/leptonic, 4570/4380/1050
+# target_events). All four AK4 jet collections (L1T_JetAK4,
+# L1T_JetPuppiAK4, FullReco_JetAK4, FullReco_JetPuppiAK4) saved completely
+# raw (cap: null). Same whole-file-granularity-overshoot caveat as the
+# candidate version -- the exact BR mixture is enforced downstream at plot
+# time via --max-events, not by these target_events values.
+#
+# Empty-axis-filter caveat: see raw_jets_minbias.yaml's comment -- an event
+# is dropped only if ALL FOUR jet collections are simultaneously empty.
+# Less likely for ttbar (harder events, more jet activity) than for
+# minbias, but still worth checking the job log's total_empty_axis_dropped.
+ds_name: raw_jets_ttbar_inclusive
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/temp-data/raw_jets_ttbar_inclusive"
+  dataset_version: collide2v_v1.0
+
+  samples:
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 4570}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 4380}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 1050}
+
+  collections:
+    L1T_JetAK4: null
+    L1T_JetPuppiAK4: null
+    FullReco_JetAK4: null
+    FullReco_JetPuppiAK4: null
+
+  flush_every_events: 2000
+  report_diagnostics: false

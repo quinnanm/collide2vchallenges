@@ -1,0 +1,84 @@
+# Kubernetes Job: runs preprocessing/convert_data.py against
+# preprocessing/configs/raw_jets_ttbar_inclusive.yaml -- all three ttbar
+# final states, all four AK4 jet collections saved raw (uncapped), no other
+# collections. Same recipe as preprocess-raw-candidates-ttbar-inclusive.yaml
+# (three samples in one run). No GPU.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: preprocess-raw-jets-ttbar-inclusive
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 14400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: preprocess
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              if [ -d /cvmfs/grid.cern.ch/etc/grid-security/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates
+                export X509_VOMS_DIR=/cvmfs/grid.cern.ch/etc/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/grid.cern.ch/etc/grid-security/vomses
+              elif [ -d /cvmfs/oasis.opensciencegrid.org/mis/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/oasis.opensciencegrid.org/mis/certificates
+                export X509_VOMS_DIR=/cvmfs/oasis.opensciencegrid.org/mis/vodata/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/oasis.opensciencegrid.org/mis/vodata/vomses
+              else
+                echo "FATAL: no CVMFS grid repo found" >&2
+                exit 1
+              fi
+              export XRD_NETWORKSTACK=IPv4
+
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
+              git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
+              cd /tmp/collide2vchallenges/preprocessing
+              pip install --quiet -r requirements.txt
+
+              echo "=== Starting conversion: $(date) ==="
+              python -u convert_data.py \
+                --config configs/raw_jets_ttbar_inclusive.yaml --overwrite --resume
+
+              echo "=== Output tree: ==="
+              find /mnt/temp-data/raw_jets_ttbar_inclusive -type f
+
+              echo "=== Job finished: $(date) ==="
+
+          env:
+            - name: X509_USER_PROXY
+              value: /etc/grid-security-ro/x509up
+
+          resources:
+            requests: {memory: "48Gi", cpu: "4"}
+            limits: {memory: "48Gi", cpu: "4"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/temp-data
+            - name: x509-proxy
+              mountPath: /etc/grid-security-ro
+              readOnly: true
+            - name: cvmfs
+              mountPath: /cvmfs
+              mountPropagation: HostToContainer
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: temp-data
+        - name: x509-proxy
+          secret:
+            secretName: x509-proxy-mquinnan-ucsd-edu
+            defaultMode: 0400
+        - name: cvmfs
+          persistentVolumeClaim:
+            claimName: cvmfs

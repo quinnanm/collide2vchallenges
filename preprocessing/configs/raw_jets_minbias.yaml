@@ -1,0 +1,39 @@
+# One-off study config: ~10k minbias events, all four AK4 jet collections
+# (L1T_JetAK4, L1T_JetPuppiAK4, FullReco_JetAK4, FullReco_JetPuppiAK4) saved
+# completely raw (cap: null -- every jet kept, original per-event order, no
+# ranking/truncation). No candidate collections, no other collections. For
+# a jet-multiplicity comparison plot (PF/non-puppi vs Puppi AK4, L1T vs
+# FullReco), not a training dataset -- output goes to the temp-data PVC.
+#
+# CAVEAT (read before trusting the output for a "raw, includes the zero
+# bin" multiplicity distribution): the pipeline's empty-axis filter
+# (_drop_events_with_empty_axis in converters.py) drops any event where
+# EVERY requested variable_object collection is simultaneously empty --
+# here, that means an event is dropped only if it has ZERO jets in ALL FOUR
+# of L1T_JetAK4/L1T_JetPuppiAK4/FullReco_JetAK4/FullReco_JetPuppiAK4 at
+# once. For minbias (soft QCD, often below jet PT thresholds entirely) this
+# is a real, plausible outcome -- meaning the resulting sample may be
+# missing some of its true "0 jets everywhere" events, biasing the low end
+# of the multiplicity distribution. There is no config knob to disable this
+# filter. The conversion job's log reports the real
+# total_empty_axis_dropped count for this run -- check it before trusting
+# the shape of the zero-jet bin.
+ds_name: raw_jets_minbias
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/temp-data/raw_jets_minbias"
+  dataset_version: collide2v_v1.0
+
+  samples:
+    - {name: minbias, label: 0, target_events: 10000}
+
+  collections:
+    L1T_JetAK4: null
+    L1T_JetPuppiAK4: null
+    FullReco_JetAK4: null
+    FullReco_JetPuppiAK4: null
+
+  flush_every_events: 2000
+  report_diagnostics: false
