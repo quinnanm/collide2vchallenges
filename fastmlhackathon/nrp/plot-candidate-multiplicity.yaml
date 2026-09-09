@@ -39,7 +39,8 @@ spec:
               echo "=== Plotting: $(date) ==="
               python -u plot_candidate_multiplicity.py \
                 --data-dir /mnt/temp-data/raw_candidates_ttbar_semileptonic/tt0123j_5f_ckm_LO_MLM_semiLeptonic \
-                --out-path /mnt/temp-data/raw_candidates_ttbar_semileptonic/candidate_multiplicity_ttbar_semileptonic.png
+                --out-path /mnt/temp-data/raw_candidates_ttbar_semileptonic/candidate_multiplicity_ttbar_semileptonic.png \
+                --log-x
 
               echo "=== Job finished: $(date) ==="
 
