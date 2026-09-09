@@ -123,6 +123,15 @@ _JET_FIELDS_WITH_CIDX = _JET_FIELDS_NO_CIDX + ["ConstituentsIdx"]
 
 COLLECTION_REGISTRY = {
     "L1T_PUPPIPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
+    # L1T_PFPart: same 15 raw fields/dtypes as L1T_PUPPIPart (confirmed in
+    # docs/eos_dataset_schema.md's own schema scan: "Same 15 fields/dtypes as
+    # L1T_PUPPIPart above"), including PuppiW -- not previously registered
+    # here at all (this pipeline had never read it; PF vs PUPPI redundancy
+    # was established for the FullReco_* pair only). Added for a raw,
+    # no-selection candidate-multiplicity comparison study, where the
+    # request was explicitly for BOTH L1T_PUPPIPart and L1T_PFPart
+    # unfiltered, not a redundancy assumption carried over from FullReco.
+    "L1T_PFPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
 
     "L1T_Electron": {"kind": "variable_object", "fields": _ELECTRON_FIELDS, "rank_field": "PT"},
     "L1T_MuonTight": {"kind": "variable_object", "fields": _MUON_FIELDS, "rank_field": "PT"},
@@ -138,18 +147,13 @@ COLLECTION_REGISTRY = {
 
     # FullReco_* mirrors L1T_* field-for-field (see docs/eos_dataset_schema.md).
     # FullReco_PUPPIPart/FullReco_PFPart share L1T_PUPPIPart's exact raw
-    # field set, so either (or both at once -- see
-    # gather_and_select_puppi_candidates's `prefix` parameter and
-    # convert_collide2v_regionized's per-candidate-collection loop) can use
-    # the SAME region-geometry candidate design (candidate_selection:
+    # field set, so any of the four "candidate" kind collections (or several
+    # at once -- see gather_and_select_puppi_candidates's `prefix` parameter
+    # and convert_collide2v_regionized's per-candidate-collection loop) can
+    # use the SAME region-geometry candidate design (candidate_selection:
     # mode/pt/floor_gev/realistic_pid apply identically to every requested
     # candidate-kind collection -- it's a single global block, not
     # per-collection; collections.<name>.total_cap IS still per-collection).
-    # L1T_PFPart deliberately does NOT get this treatment (stays
-    # variable_object below) -- only the FullReco_* pair does, since
-    # FullReco_PFPart vs. FullReco_PUPPIPart is a real requested comparison
-    # (confirmed redundant/identical in practice, per README.md), not just
-    # an omission.
     "FullReco_PUPPIPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
     "FullReco_PFPart": {"kind": "candidate", "fields": PUPPI_CAND_RAW_FIELDS},
     "FullReco_Electron": {"kind": "variable_object", "fields": _ELECTRON_FIELDS, "rank_field": "PT"},
@@ -189,12 +193,16 @@ COLLECTION_REGISTRY = {
 }
 
 # Today's implicit default set (used whenever a config omits `collections:`
-# entirely) -- every L1T_* collection except L1T_PFPart (redundant with
-# unweighted L1T_PUPPIPart, confirmed on real data), L1T_PUPPIPart at the
-# original fixed 18/region, every "other" L1T_* collection uncapped (kept in
-# full, exactly like today's gather_other_l1t_collections default).
+# entirely) -- every L1T_* collection except the two candidate-kind ones
+# (L1T_PUPPIPart -- the default candidate source; L1T_PFPart, redundant with
+# unweighted L1T_PUPPIPart, confirmed on real data, so not part of the
+# implicit default), L1T_PUPPIPart at the original fixed 18/region, every
+# "other" L1T_* collection uncapped (kept in full, exactly like today's
+# gather_other_l1t_collections default). Filtering by spec["kind"] rather
+# than a name blocklist so this stays correct regardless of which L1T_*
+# collections are candidate-kind in the registry above.
 OTHER_L1T_COLLECTIONS = {name: spec["fields"] for name, spec in COLLECTION_REGISTRY.items()
-                          if name.startswith("L1T_") and name != "L1T_PUPPIPart"}
+                          if name.startswith("L1T_") and spec["kind"] != "candidate"}
 DEFAULT_COLLECTIONS_CFG = {"L1T_PUPPIPart": CANDIDATES_PER_REGION, **{name: None for name in OTHER_L1T_COLLECTIONS}}
 
 _FLOAT_FIELDS = {"PT", "Eta", "Phi", "D0", "DZ", "ErrorD0", "ErrorDZ", "Mass",
@@ -246,7 +254,7 @@ def _normalize_collection_entry(entry):
     the common case) or a dict `{cap, object_selection, drop_fields, total_cap}`
     for finer per-collection control. Always returns (cap, object_selection_list,
     drop_fields_set, total_cap). `total_cap` only applies to a candidate-kind
-    collection (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart -- see
+    collection (L1T_PUPPIPart/L1T_PFPart/FullReco_PUPPIPart/FullReco_PFPart -- see
     gather_and_select_puppi_candidates) -- validated elsewhere, not here."""
     if entry is None or isinstance(entry, int):
         return entry, [], set(), None
@@ -1097,7 +1105,7 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
     """Parse+validate `collections:`. Returns {want_candidates,
     candidate_collections_cfg (name -> (cap, object_selection, drop_fields,
     total_cap), one entry per requested candidate-kind collection --
-    L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart, zero or more at once;
+    L1T_PUPPIPart/L1T_PFPart/FullReco_PUPPIPart/FullReco_PFPart, zero or more at once;
     candidate_selection: mode/pt/floor_gev/realistic_pid apply identically to
     ALL of them -- it's a single global block, not per-collection),
     other_collections_cfg (name -> (cap, object_selection, drop_fields,
@@ -1119,7 +1127,7 @@ def _resolve_collections_cfg(cfg: DataConfig) -> dict:
         spec = COLLECTION_REGISTRY[name]
         if total_cap is not None and spec["kind"] != "candidate":
             raise ValueError(f"data_processing.collections.{name}: total_cap is only supported for a "
-                              f"candidate-kind collection (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart -- "
+                              f"candidate-kind collection (L1T_PUPPIPart/L1T_PFPart/FullReco_PUPPIPart/FullReco_PFPart -- "
                               f"a secondary post-selection ceiling on the region-based candidate list) -- "
                               f"every other collection's own 'cap' is already the final per-event object limit.")
         # object_selection always refers to a collection's RAW field names
@@ -1308,7 +1316,7 @@ def convert_collide2v_regionized(cfg: DataConfig, overwrite: bool = False, resum
                        omit entirely (still read, in case object_selection
                        needs one of them).
                      total_cap: candidate-kind collections only
-                       (L1T_PUPPIPart/FullReco_PUPPIPart/FullReco_PFPart --
+                       (L1T_PUPPIPart/L1T_PFPart/FullReco_PUPPIPart/FullReco_PFPart --
                        zero or more may be requested at once, each with its
                        own total_cap) -- a secondary flat ceiling on the
                        FLATTENED per-event candidate count for THAT

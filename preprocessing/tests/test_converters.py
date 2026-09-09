@@ -871,6 +871,58 @@ def test_convert_collide2v_regionized_multiple_candidate_collections_at_once(tmp
     assert ak.max(ak.num(result["FullReco_PUPPIPart"]["pt"], axis=1)) <= 6
 
 
+def test_convert_collide2v_regionized_l1t_pfpart_and_all_four_candidate_collections_raw(tmp_path):
+    # L1T_PFPart is a newly-registered candidate-kind collection (previously
+    # not in COLLECTION_REGISTRY at all -- this pipeline had never read it).
+    # Exercises it alongside all three of the other candidate-kind
+    # collections at once (L1T_PUPPIPart, FullReco_PUPPIPart, FullReco_PFPart),
+    # under candidate_selection.pt: none (no region/floor/cap selection at
+    # all -- every candidate with pt_raw > 0 survives), matching the raw
+    # candidate-multiplicity study this registration was added for.
+    import yaml
+
+    sample_dir = tmp_path / "eos"
+    out_dir = tmp_path / "out"
+    _write_synthetic_puppipart_sample(str(sample_dir / "TestSample"), n_files=1, events_per_file=10, seed=41,
+                                       prefix="L1T_PUPPIPart")
+    src = str(sample_dir / "TestSample" / "file_0.parquet")
+    existing = ak.from_parquet(src)
+    fields = {f: existing[f] for f in existing.fields}
+    raw_fields = ("PT", "Eta", "Phi", "PID", "Charge", "E", "Mass", "D0", "DZ", "ErrorD0", "ErrorDZ",
+                  "IsPU", "IsRecoPU", "PuppiW", "fUniqueID")
+    for prefix in ("L1T_PFPart", "FullReco_PUPPIPart", "FullReco_PFPart"):
+        for f in raw_fields:
+            fields[f"{prefix}_{f}"] = existing[f"L1T_PUPPIPart_{f}"]
+    _write_parquet_with_dataset_version(ak.Array(fields), src)
+
+    config = {
+        "ds_name": "test_ds",
+        "data_processing": {
+            "sample_dir": str(sample_dir), "redir": "", "out_path": str(out_dir),
+            "dataset_version": "collide2v_v1.0",
+            "collections": {
+                "L1T_PUPPIPart": None, "L1T_PFPart": None,
+                "FullReco_PUPPIPart": None, "FullReco_PFPart": None,
+            },
+            "candidate_selection": {"pt": "none"},
+            "samples": [{"name": "TestSample", "label": 0}],
+        },
+    }
+    config_path = tmp_path / "dataconfig.yml"
+    config_path.write_text(yaml.dump(config))
+    cfg = DataConfig(str(config_path))
+    convert_collide2v_regionized(cfg, overwrite=False)  # must not raise
+
+    out_frag = out_dir / "TestSample" / "TestSample_00000.parquet"
+    result = ak.from_parquet(str(out_frag))
+    for name in ("L1T_PUPPIPart", "L1T_PFPart", "FullReco_PUPPIPart", "FullReco_PFPart"):
+        assert name in result.fields
+        # pt: none keeps every candidate with pt_raw > 0 -- since the fixture
+        # copied the same underlying candidates into all four collections,
+        # every one should end up with the SAME per-event candidate count.
+        assert ak.all(ak.num(result[name]["pt"], axis=1) == ak.num(result["L1T_PUPPIPart"]["pt"], axis=1))
+
+
 def test_convert_collide2v_regionized_skips_unreadable_file_instead_of_crashing(tmp_path, monkeypatch):
     # Regression test: a real production run crashed outright on a genuine
     # xrootd/EOS server error (`OSError: ... [3012] Unable to open file ...
