@@ -33,5 +33,16 @@ data_processing:
     mode: flat_topn
 
   # No split: -- this is a diagnostic sample, not a train/eval dataset.
-  flush_every_events: 50000
+  #
+  # 2000, not 50000: a real run OOMed at 32Gi -- flush_every_events (50000)
+  # was above target_events (10000), so the buffer never flushed at all and
+  # the ENTIRE raw, uncapped, 4-collection candidate set for the whole
+  # sample sat in memory at once (same root cause as C1_HH4b's earlier real
+  # OOM -- see that dataconfig's identical comment). This config is even
+  # more memory-hungry per event than any production config: FOUR candidate
+  # collections at once, ALL uncapped (raw FullReco density alone is
+  # 4200-7400 candidates/event uncapped, and both FullReco_PUPPIPart and
+  # FullReco_PFPart are being gathered simultaneously here). A real run's
+  # single unflushed ~9800-event file already used ~9.9GB.
+  flush_every_events: 2000
   report_diagnostics: false

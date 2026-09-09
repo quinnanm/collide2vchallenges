@@ -14,7 +14,10 @@ metadata:
   name: preprocess-raw-candidates-ttbar-semileptonic
   namespace: fastml26-hackathon
 spec:
-  backoffLimit: 1
+  # backoffLimit: 2, not 1 -- the first real run's own retry died to a
+  # genuine NodeNotReady infra failure (unrelated to this job's code), so
+  # one retry alone wasn't enough margin.
+  backoffLimit: 2
   activeDeadlineSeconds: 7200   # 2h -- one file, ~10k events, no cap/selection to slow anything down
   template:
     spec:
@@ -63,13 +66,14 @@ spec:
               value: /etc/grid-security-ro/x509up
 
           resources:
-            # 32Gi: no cap/floor/region selection at all on FOUR candidate
-            # collections at once (two of them FullReco -- observed
-            # 4200-7400 raw candidates/event uncapped) is far more memory-
-            # hungry per event than any of the production configs, even
-            # though this is only ~10k events / one file.
-            requests: {memory: "32Gi", cpu: "4"}
-            limits: {memory: "32Gi", cpu: "4"}
+            # 48Gi -- bumped from 32Gi after a real run OOMed there. Root
+            # cause was flush_every_events (50000) sitting above
+            # target_events (10000), so the whole unflushed sample -- FOUR
+            # uncapped candidate collections at once -- stayed in memory the
+            # entire run (fixed in the dataconfig, see its comment); this is
+            # insurance on top of that fix, not a substitute for it.
+            requests: {memory: "48Gi", cpu: "4"}
+            limits: {memory: "48Gi", cpu: "4"}
 
           volumeMounts:
             - name: output-volume
