@@ -45,9 +45,17 @@ def build_series(arr: ak.Array) -> dict:
     }
 
 
-def plot_series(series: dict, title: str, out_path: str, n_bins: int = 80) -> None:
+def plot_series(series: dict, title: str, out_path: str, n_bins: int = 80, log_x: bool = False) -> None:
     max_val = max(arr.max() for arr in series.values())
-    bins = np.linspace(0, max_val + 1, n_bins + 1)
+    if log_x:
+        # Linear bins would look wrong (bunched at the low end) once the
+        # x-axis itself is log-scaled -- need log-spaced bin edges instead.
+        # log(0) is undefined, so the lower edge is the smallest ACTUAL
+        # value across every series (clipped to >=1 defensively), not 0.
+        min_val = max(1, min(arr[arr > 0].min() if (arr > 0).any() else 1 for arr in series.values()))
+        bins = np.logspace(np.log10(min_val), np.log10(max_val + 1), n_bins + 1)
+    else:
+        bins = np.linspace(0, max_val + 1, n_bins + 1)
 
     fig, ax = plt.subplots(figsize=(9, 6))
     colors = ["#3b6fa0", "#e07b39", "#4a9c5f", "#b23b6f"]
@@ -56,6 +64,8 @@ def plot_series(series: dict, title: str, out_path: str, n_bins: int = 80) -> No
                 label=f"{name} (mean={arr.mean():.0f}, median={np.median(arr):.0f})")
 
     ax.set_yscale("log")
+    if log_x:
+        ax.set_xscale("log")
     ax.set_xlabel("candidates / event")
     ax.set_ylabel("events")
     ax.set_title(title)
@@ -73,6 +83,8 @@ if __name__ == "__main__":
     parser.add_argument("--title", default="tt0123j_5f_ckm_LO_MLM_semiLeptonic: candidate multiplicity "
                                              "(raw, no selection applied)")
     parser.add_argument("--n-bins", type=int, default=80)
+    parser.add_argument("--log-x", action="store_true",
+                         help="Log-scale the x-axis too (bins become log-spaced instead of linear).")
     args = parser.parse_args()
 
     arr = load_all_fragments(args.data_dir)
@@ -82,4 +94,4 @@ if __name__ == "__main__":
         print(f"{name}: n={len(values)} mean={values.mean():.1f} median={np.median(values):.1f} "
               f"min={values.min()} max={values.max()}")
 
-    plot_series(series, args.title, args.out_path, args.n_bins)
+    plot_series(series, args.title, args.out_path, args.n_bins, log_x=args.log_x)
