@@ -12,11 +12,26 @@ Series:
   FullReco PF cands       -- FullReco_PFPart, unfiltered candidate count
   FullReco Puppi, w>0.5   -- FullReco_PUPPIPart, count with puppi_weight > 0.5
 
+Supports combining multiple sample directories into one dataset (e.g. the
+three ttbar final states mixed to a branching-ratio-weighted "inclusive
+ttbar"), each optionally capped at a fixed number of events -- since
+preprocessing uses whole-file granularity (overshoot allowed, never
+truncates mid-file), a small requested target_events can still yield ~1
+file's worth (~9-10k events); the exact desired proportions are enforced
+here at load time via --max-events, not at preprocessing time.
+
 Usage
 -----
+# single sample
 python plot_candidate_multiplicity.py \
     --data-dir /mnt/temp-data/raw_candidates_ttbar_semileptonic/tt0123j_5f_ckm_LO_MLM_semiLeptonic \
-    --out-path /tmp/candidate_multiplicity_ttbar_semileptonic.png
+    --out-path-prefix /tmp/candidate_multiplicity_ttbar_semileptonic
+
+# multiple samples combined, each capped to an exact event count
+python plot_candidate_multiplicity.py \
+    --data-dir .../hadronic .../semiLeptonic .../leptonic \
+    --max-events 4570 4380 1050 \
+    --out-path-prefix /tmp/candidate_multiplicity_ttbar_inclusive
 """
 import argparse
 import glob
@@ -28,12 +43,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def load_all_fragments(data_dir: str) -> ak.Array:
+def load_sample(data_dir: str, max_events: int = None) -> ak.Array:
     frags = sorted(glob.glob(f"{data_dir}/*.parquet"))
     if not frags:
         raise FileNotFoundError(f"no .parquet fragments found under {data_dir}")
     arrays = [ak.from_parquet(f) for f in frags]
-    return arrays[0] if len(arrays) == 1 else ak.concatenate(arrays, axis=0)
+    arr = arrays[0] if len(arrays) == 1 else ak.concatenate(arrays, axis=0)
+    if max_events is not None:
+        if len(arr) < max_events:
+            raise ValueError(f"{data_dir}: only {len(arr)} events available, need {max_events}")
+        arr = arr[:max_events]
+    return arr
+
+
+def load_all_fragments(data_dir: str) -> ak.Array:
+    """Back-compat single-dir loader (used by tests/smoke test)."""
+    return load_sample(data_dir)
+
+
+def load_combined(data_dirs: list, max_events_list: list = None) -> ak.Array:
+    if max_events_list is None:
+        max_events_list = [None] * len(data_dirs)
+    samples = []
+    for data_dir, max_events in zip(data_dirs, max_events_list):
+        arr = load_sample(data_dir, max_events)
+        print(f"Loaded {len(arr)} events from {data_dir}" + (f" (capped at {max_events})" if max_events else ""))
+        samples.append(arr)
+    return samples[0] if len(samples) == 1 else ak.concatenate(samples, axis=0)
 
 
 def build_series(arr: ak.Array) -> dict:
@@ -77,21 +113,30 @@ def plot_series(series: dict, title: str, out_path: str, n_bins: int = 80, log_x
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data-dir", required=True,
-                         help="Directory of *.parquet fragments (one sample's worth) to read.")
-    parser.add_argument("--out-path", default="candidate_multiplicity.png")
-    parser.add_argument("--title", default="tt0123j_5f_ckm_LO_MLM_semiLeptonic: candidate multiplicity "
-                                             "(raw, no selection applied)")
+    parser.add_argument("--data-dir", required=True, nargs="+",
+                         help="One or more directories of *.parquet fragments to read and combine.")
+    parser.add_argument("--max-events", type=int, nargs="+", default=None,
+                         help="Cap events taken from each --data-dir, same order (enforces an exact mixture "
+                              "when combining samples). A single value applies to every --data-dir; otherwise "
+                              "must have one value per --data-dir.")
+    parser.add_argument("--out-path-prefix", default="candidate_multiplicity",
+                         help="Both '<prefix>_linear.png' and '<prefix>_logx.png' are written.")
+    parser.add_argument("--title", default="candidate multiplicity (raw, no selection applied)")
     parser.add_argument("--n-bins", type=int, default=80)
-    parser.add_argument("--log-x", action="store_true",
-                         help="Log-scale the x-axis too (bins become log-spaced instead of linear).")
     args = parser.parse_args()
 
-    arr = load_all_fragments(args.data_dir)
-    print(f"Loaded {len(arr)} events from {args.data_dir}")
+    max_events_list = args.max_events
+    if max_events_list is not None and len(max_events_list) == 1 and len(args.data_dir) > 1:
+        max_events_list = max_events_list * len(args.data_dir)
+    if max_events_list is not None and len(max_events_list) != len(args.data_dir):
+        parser.error(f"--max-events has {len(max_events_list)} values but there are {len(args.data_dir)} --data-dir")
+
+    arr = load_combined(args.data_dir, max_events_list)
+    print(f"Combined total: {len(arr)} events")
     series = build_series(arr)
     for name, values in series.items():
         print(f"{name}: n={len(values)} mean={values.mean():.1f} median={np.median(values):.1f} "
               f"min={values.min()} max={values.max()}")
 
-    plot_series(series, args.title, args.out_path, args.n_bins, log_x=args.log_x)
+    plot_series(series, args.title, f"{args.out_path_prefix}_linear.png", args.n_bins, log_x=False)
+    plot_series(series, args.title, f"{args.out_path_prefix}_logx.png", args.n_bins, log_x=True)

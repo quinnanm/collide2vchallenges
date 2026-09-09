@@ -1,0 +1,39 @@
+# One-off study config: ~10k minbias events, all four candidate-kind
+# collections (L1T_PUPPIPart, L1T_PFPart, FullReco_PUPPIPart,
+# FullReco_PFPart) saved COMPLETELY RAW -- no region geometry, no pT floor,
+# no per-region/per-event cap at all (candidate_selection.pt: none -- see
+# gather_and_select_puppi_candidates's docstring in converters.py). No other
+# collections saved. Same recipe as raw_candidates_ttbar_semileptonic.yaml,
+# see its comments for the flush_every_events rationale. Output goes to the
+# temp-data PVC, not hackathon-data.
+#
+# target_events is 10000, but preprocessing uses whole-file granularity
+# (overshoot allowed, never truncates mid-file) -- a single file already
+# yields ~9800-9900 events, so this will likely overshoot to ~2 files
+# (~19-20k), same as the ttbar-semileptonic run. The plotting step slices
+# back down to exactly 10000 events at load time (--max-events), so the
+# actual "10k minbias" sample used in the final plot is exact regardless of
+# how much raw data got preprocessed here.
+ds_name: raw_candidates_minbias
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/temp-data/raw_candidates_minbias"
+  dataset_version: collide2v_v1.0
+
+  samples:
+    - {name: minbias, label: 0, target_events: 10000}
+
+  collections:
+    L1T_PUPPIPart: null
+    L1T_PFPart: null
+    FullReco_PUPPIPart: null
+    FullReco_PFPart: null
+
+  candidate_selection:
+    pt: none
+    mode: flat_topn
+
+  flush_every_events: 2000
+  report_diagnostics: false

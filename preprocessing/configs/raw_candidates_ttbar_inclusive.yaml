@@ -1,0 +1,48 @@
+# One-off study config: ~10k "inclusive ttbar" events -- all three ttbar
+# final states, mixed in proportions matching the real ttbar branching
+# ratio, not equal weights. Same raw/no-cuts 4-collection recipe as
+# raw_candidates_ttbar_semileptonic.yaml (see its comments for the
+# flush_every_events rationale).
+#
+# BR derivation (W boson: BR(hadronic)=67.6%, BR(leptonic, e+mu+tau)=32.4%,
+# PDG-standard values):
+#   fully hadronic (both W->qq'):     0.676^2         = 45.70% -> 4570 events
+#   semileptonic (one had, one lep):  2*0.676*0.324    = 43.80% -> 4380 events
+#   fully leptonic (both W->l nu):    0.324^2          = 10.50% -> 1050 events
+#   sum: 100.00% -> 10000 events
+#
+# target_events below encode this BR intent directly, but preprocessing uses
+# whole-file granularity (overshoot allowed, never truncates mid-file) -- a
+# single file already yields ~9800-9900 events, so ALL THREE sub-samples
+# will actually come back with ~1 file's worth (~9800+) regardless of their
+# small target_events (in particular 1050 for leptonic is far below one
+# file's yield). The exact BR-weighted mixture (4570/4380/1050, summing to
+# 10000) is enforced downstream at plot/load time via
+# plot_candidate_multiplicity.py's --max-events, which slices each
+# sub-sample's directory down to its precise count before combining -- NOT
+# by this target_events value.
+ds_name: raw_candidates_ttbar_inclusive
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/temp-data/raw_candidates_ttbar_inclusive"
+  dataset_version: collide2v_v1.0
+
+  samples:
+    - {name: tt0123j_5f_ckm_LO_MLM_hadronic, label: 0, target_events: 4570}
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 4380}
+    - {name: tt0123j_5f_ckm_LO_MLM_leptonic, label: 0, target_events: 1050}
+
+  collections:
+    L1T_PUPPIPart: null
+    L1T_PFPart: null
+    FullReco_PUPPIPart: null
+    FullReco_PFPart: null
+
+  candidate_selection:
+    pt: none
+    mode: flat_topn
+
+  flush_every_events: 2000
+  report_diagnostics: false
