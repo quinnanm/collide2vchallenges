@@ -1,0 +1,94 @@
+# Kubernetes Job: runs preprocessing/convert_data.py against
+# preprocessing/configs/raw_candidates_ttbar_semileptonic.yaml -- ~10k
+# tt0123j_5f_ckm_LO_MLM_semiLeptonic events, all four candidate-kind
+# collections (L1T_PUPPIPart, L1T_PFPart, FullReco_PUPPIPart,
+# FullReco_PFPart) saved completely raw (candidate_selection.pt: none), no
+# other collections. One-off diagnostic sample for a candidate-multiplicity
+# comparison plot, NOT a training dataset -- output goes to the temp-data
+# PVC, not hackathon-data. See preprocess-c1-hh4b.yaml's comments for
+# background on the CVMFS/grid-cert/xrootd setup below. No GPU requested --
+# this code has no GPU code path at all (numpy/awkward/pyarrow only).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: preprocess-raw-candidates-ttbar-semileptonic
+  namespace: fastml26-hackathon
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 7200   # 2h -- one file, ~10k events, no cap/selection to slow anything down
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: preprocess
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Job started: $(date) ==="
+
+              if [ -d /cvmfs/grid.cern.ch/etc/grid-security/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates
+                export X509_VOMS_DIR=/cvmfs/grid.cern.ch/etc/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/grid.cern.ch/etc/grid-security/vomses
+              elif [ -d /cvmfs/oasis.opensciencegrid.org/mis/certificates ]; then
+                export X509_CERT_DIR=/cvmfs/oasis.opensciencegrid.org/mis/certificates
+                export X509_VOMS_DIR=/cvmfs/oasis.opensciencegrid.org/mis/vodata/grid-security/vomsdir
+                export VOMS_USERCONF=/cvmfs/oasis.opensciencegrid.org/mis/vodata/vomses
+              else
+                echo "FATAL: no CVMFS grid repo found" >&2
+                exit 1
+              fi
+              export XRD_NETWORKSTACK=IPv4
+
+              apt-get update -qq && apt-get install -y -qq --no-install-recommends git ca-certificates > /dev/null
+              rm -rf /var/lib/apt/lists/*
+
+              git clone --depth 1 https://github.com/quinnanm/collide2vchallenges /tmp/collide2vchallenges
+              cd /tmp/collide2vchallenges/preprocessing
+              pip install --quiet -r requirements.txt
+
+              echo "=== Starting conversion: $(date) ==="
+              python -u convert_data.py \
+                --config configs/raw_candidates_ttbar_semileptonic.yaml --overwrite --resume
+
+              echo "=== Output tree: ==="
+              find /mnt/temp-data/raw_candidates_ttbar_semileptonic -type f
+
+              echo "=== Job finished: $(date) ==="
+
+          env:
+            - name: X509_USER_PROXY
+              value: /etc/grid-security-ro/x509up
+
+          resources:
+            # 32Gi: no cap/floor/region selection at all on FOUR candidate
+            # collections at once (two of them FullReco -- observed
+            # 4200-7400 raw candidates/event uncapped) is far more memory-
+            # hungry per event than any of the production configs, even
+            # though this is only ~10k events / one file.
+            requests: {memory: "32Gi", cpu: "4"}
+            limits: {memory: "32Gi", cpu: "4"}
+
+          volumeMounts:
+            - name: output-volume
+              mountPath: /mnt/temp-data
+            - name: x509-proxy
+              mountPath: /etc/grid-security-ro
+              readOnly: true
+            - name: cvmfs
+              mountPath: /cvmfs
+              mountPropagation: HostToContainer
+
+      volumes:
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: temp-data
+        - name: x509-proxy
+          secret:
+            secretName: x509-proxy-mquinnan-ucsd-edu
+            defaultMode: 0400
+        - name: cvmfs
+          persistentVolumeClaim:
+            claimName: cvmfs

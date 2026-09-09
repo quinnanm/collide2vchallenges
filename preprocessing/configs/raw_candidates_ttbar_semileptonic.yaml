@@ -1,0 +1,37 @@
+# One-off study config: ~10k tt0123j_5f_ckm_LO_MLM_semiLeptonic events, all
+# four candidate-kind collections (L1T_PUPPIPart, L1T_PFPart,
+# FullReco_PUPPIPart, FullReco_PFPart) saved COMPLETELY RAW -- no region
+# geometry, no pT floor, no per-region/per-event cap at all
+# (candidate_selection.pt: none -- see gather_and_select_puppi_candidates's
+# docstring in converters.py). No other collections saved. For a
+# candidate-multiplicity comparison plot (PF vs PUPPI, L1T vs FullReco,
+# unfiltered vs puppi_weight>0.5), not a training dataset -- output goes to
+# the temp-data PVC, not hackathon-data.
+ds_name: raw_candidates_ttbar_semileptonic
+
+data_processing:
+  sample_dir: /eos/project/f/foundational-model-dataset/samples/production_final
+  redir: "root://eosproject-f.cern.ch/"
+  out_path: "/mnt/temp-data/raw_candidates_ttbar_semileptonic"
+  dataset_version: collide2v_v1.0
+
+  samples:
+    - {name: tt0123j_5f_ckm_LO_MLM_semiLeptonic, label: 0, target_events: 10000}
+
+  collections:
+    L1T_PUPPIPart: null
+    L1T_PFPart: null
+    FullReco_PUPPIPart: null
+    FullReco_PFPart: null
+
+  # pt: none -- no region assignment, no pT floor, no cap of any kind. Every
+  # candidate with raw pT > 0 is kept (mode/floor_gev are irrelevant in this
+  # mode, per gather_and_select_puppi_candidates's docstring, but mode still
+  # needs a valid value to pass config validation).
+  candidate_selection:
+    pt: none
+    mode: flat_topn
+
+  # No split: -- this is a diagnostic sample, not a train/eval dataset.
+  flush_every_events: 50000
+  report_diagnostics: false
